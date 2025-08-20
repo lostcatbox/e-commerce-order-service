@@ -1,0 +1,19 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+trim_trailing_whitespace = true
+insert_final_newline = true
+tab_width = 4
+
+[*.{kt,kts}]
+# import 문에서 와일드카드 사용되어야하므로 무시
+ktlint_standard_no-wildcard-imports = disabled
+# 주석 여러번 반복 룰 무시
+ktlint_standard_comment-wrapping = disabled
+ktlint_standard_no-consecutive-comments = disabled
+# kDoc 형태의 주석 여러번 반복 룰 무시
+ktlint_kdoc_no-consecutive-kdoc-comments = disabled
