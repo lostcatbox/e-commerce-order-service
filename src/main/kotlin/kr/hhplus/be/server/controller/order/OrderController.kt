@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.controller.order
 
 import kr.hhplus.be.server.controller.order.dto.*
-import org.hibernate.query.Page.page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
