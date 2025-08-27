@@ -11,6 +11,26 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/products")
 class ProductController {
     /**
+     * 상품 정보 조회
+     * GET /api/v1/products/{productId}
+     */
+    @GetMapping("/{productId}")
+    fun getProduct(
+        @PathVariable productId: Long,
+    ): ResponseEntity<ProductResponse> {
+        // TODO: 상품 서비스 호출
+        val mockResponse =
+            ProductResponse(
+                productId = productId,
+                name = "상품 $productId",
+                description = "상품 설명 $productId",
+                price = 10000L,
+                stock = 100,
+            )
+        return ResponseEntity.ok(mockResponse)
+    }
+
+    /**
      * 인기 판매 상품 조회 (최근 3일간 상위 5개)
      * GET /api/v1/products/popular
      */
