@@ -1,0 +1,21 @@
+package kr.hhplus.be.server.product.service
+
+import kr.hhplus.be.server.product.domain.Product
+
+/**
+ * 상품 서비스 인터페이스
+ */
+interface ProductServiceInterface {
+    /**
+     * 상품 정보 조회
+     * @param productId 상품 ID
+     * @return 상품 정보
+     */
+    fun getProduct(productId: Long): Product
+
+    /**
+     * 최근 3일간 가장 많이 팔린 상위 5개 상품 조회
+     * @return 인기 상품 목록
+     */
+    fun getPopularProducts(): List<Product>
+}
