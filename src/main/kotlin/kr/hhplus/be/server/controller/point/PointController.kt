@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.controller.point
 
 import kr.hhplus.be.server.controller.point.dto.*
+import kr.hhplus.be.server.point.service.PointServiceInterface
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -9,7 +10,9 @@ import org.springframework.web.bind.annotation.*
  */
 @RestController
 @RequestMapping("/api/v1/points")
-class PointController {
+class PointController(
+    private val pointService: PointServiceInterface
+) {
 
     /**
      * 사용자 포인트 잔액 조회
@@ -19,13 +22,14 @@ class PointController {
     fun getPointBalance(
         @PathVariable userId: Long
     ): ResponseEntity<PointBalanceResponse> {
-        // TODO: 포인트 서비스 호출
-        val mockResponse = PointBalanceResponse(
-            userId = userId,
-            balance = 50000L,
-            lastUpdatedAt = System.currentTimeMillis()
+        val userPoint = pointService.getPointBalance(userId)
+
+        val response = PointBalanceResponse(
+            userId = userPoint.userId,
+            balance = userPoint.balance,
+            lastUpdatedAt = userPoint.lastUpdatedAt
         )
-        return ResponseEntity.ok(mockResponse)
+        return ResponseEntity.ok(response)
     }
 
     /**
@@ -37,14 +41,19 @@ class PointController {
         @PathVariable userId: Long,
         @RequestBody request: PointChargeRequest
     ): ResponseEntity<PointChargeResponse> {
-        // TODO: 포인트 충전 서비스 호출
-        val mockResponse = PointChargeResponse(
-            userId = userId,
+        // 충전 전 잔액 조회
+        val previousUserPoint = pointService.getPointBalance(userId)
+
+        // 포인트 충전
+        val chargedUserPoint = pointService.chargePoint(userId, request.amount)
+
+        val response = PointChargeResponse(
+            userId = chargedUserPoint.userId,
             chargedAmount = request.amount,
-            previousBalance = 50000L,
-            currentBalance = 50000L + request.amount,
-            chargedAt = System.currentTimeMillis()
+            previousBalance = previousUserPoint.balance,
+            currentBalance = chargedUserPoint.balance,
+            chargedAt = chargedUserPoint.lastUpdatedAt
         )
-        return ResponseEntity.ok(mockResponse)
+        return ResponseEntity.ok(response)
     }
 }
