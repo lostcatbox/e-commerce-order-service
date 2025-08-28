@@ -3,10 +3,10 @@ package kr.hhplus.be.server.point.domain
 /**
  * 사용자 포인트 도메인 모델
  */
-data class UserPoint(
+class UserPoint(
     val userId: Long,
-    val balance: Long,
-    val lastUpdatedAt: Long = System.currentTimeMillis(),
+    private var balance: Long,
+    private var lastUpdatedAt: Long = System.currentTimeMillis(),
 ) {
     companion object {
         const val MIN_BALANCE = 0L // 최소 잔액
@@ -23,39 +23,43 @@ data class UserPoint(
     }
 
     /**
+     * 현재 잔액 조회
+     */
+    fun getBalance(): Long = balance
+
+    /**
+     * 마지막 업데이트 시간 조회
+     */
+    fun getLastUpdatedAt(): Long = lastUpdatedAt
+
+    /**
      * 포인트 충전
      * @param amount 충전할 금액
-     * @return 충전된 UserPoint
      */
-    fun charge(amount: Long): UserPoint {
+    fun charge(amount: Long) {
         // param 검증
         validateChargeAmount(amount)
         val newBalance = balance + amount
         // 잔액 검증
         validateBalance(newBalance)
 
-        return copy(
-            balance = newBalance,
-            lastUpdatedAt = System.currentTimeMillis(),
-        )
+        this.balance = newBalance
+        this.lastUpdatedAt = System.currentTimeMillis()
     }
 
     /**
      * 포인트 사용
      * @param amount 사용할 금액
-     * @return 사용된 UserPoint
      */
-    fun use(amount: Long): UserPoint {
+    fun use(amount: Long) {
         // param 검증
         validateUseAmount(amount)
         val newBalance = balance - amount
         // 잔액 검증
         validateBalance(newBalance)
 
-        return copy(
-            balance = newBalance,
-            lastUpdatedAt = System.currentTimeMillis(),
-        )
+        this.balance = newBalance
+        this.lastUpdatedAt = System.currentTimeMillis()
     }
 
     private fun validateChargeAmount(amount: Long) {

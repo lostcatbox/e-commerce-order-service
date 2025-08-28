@@ -26,8 +26,8 @@ class PointController(
 
         val response = PointBalanceResponse(
             userId = userPoint.userId,
-            balance = userPoint.balance,
-            lastUpdatedAt = userPoint.lastUpdatedAt
+            balance = userPoint.getBalance(),
+            lastUpdatedAt = userPoint.getLastUpdatedAt()
         )
         return ResponseEntity.ok(response)
     }
@@ -50,9 +50,9 @@ class PointController(
         val response = PointChargeResponse(
             userId = chargedUserPoint.userId,
             chargedAmount = request.amount,
-            previousBalance = previousUserPoint.balance,
-            currentBalance = chargedUserPoint.balance,
-            chargedAt = chargedUserPoint.lastUpdatedAt
+            previousBalance = previousUserPoint.getBalance(),
+            currentBalance = chargedUserPoint.getBalance(),
+            chargedAt = chargedUserPoint.getLastUpdatedAt()
         )
         return ResponseEntity.ok(response)
     }

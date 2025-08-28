@@ -19,8 +19,8 @@ data class CouponInfoResponse(
                 couponId = coupon.couponId,
                 description = coupon.description,
                 discountAmount = coupon.discountAmount,
-                stock = coupon.stock,
-                couponStatus = coupon.couponStatus
+                stock = coupon.getStock(),
+                couponStatus = coupon.getCouponStatus()
             )
         }
     }

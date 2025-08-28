@@ -3,12 +3,12 @@ package kr.hhplus.be.server.coupon.domain
 /**
  * 선착순 쿠폰 도메인 모델
  */
-data class Coupon(
+class Coupon(
     val couponId: Long,
     val description: String,
     val discountAmount: Long,
-    val stock: Int,
-    val couponStatus: CouponStatus,
+    private var stock: Int,
+    private var couponStatus: CouponStatus,
 ) {
     companion object {
         const val MIN_STOCK = 0 // 최소 재고
@@ -26,14 +26,23 @@ data class Coupon(
     }
 
     /**
-     * 선착순 쿠폰 발급 (재고 차감)
-     * @return 재고가 차감된 Coupon
+     * 현재 재고량 조회
      */
-    fun issueCoupon(): Coupon {
+    fun getStock(): Int = stock
+
+    /**
+     * 현재 쿠폰 상태 조회
+     */
+    fun getCouponStatus(): CouponStatus = couponStatus
+
+    /**
+     * 선착순 쿠폰 발급 (재고 차감)
+     */
+    fun issueCoupon() {
         require(isOpened()) { "쿠폰이 사용 가능한 상태가 아닙니다. 현재 상태: $couponStatus" }
         require(stock > 0) { "쿠폰 재고가 부족합니다. 현재 재고: $stock" }
 
-        return copy(stock = stock - 1)
+        this.stock = stock - 1
     }
 
     /**
@@ -58,10 +67,9 @@ data class Coupon(
 
     /**
      * 쿠폰 닫기
-     * @return 닫힌 상태의 Coupon
      */
-    fun close(): Coupon {
-        return copy(couponStatus = CouponStatus.CLOSED)
+    fun close() {
+        this.couponStatus = CouponStatus.CLOSED
     }
 }
 

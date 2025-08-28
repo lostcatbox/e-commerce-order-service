@@ -28,7 +28,7 @@ class ProductController(
             name = product.name,
             description = product.description,
             price = product.price,
-            stock = product.stock,
+            stock = product.getStock(),
         )
         return ResponseEntity.ok(response)
     }
@@ -47,7 +47,7 @@ class ProductController(
                 name = product.name,
                 description = product.description,
                 price = product.price,
-                stock = product.stock,
+                stock = product.getStock(),
                 salesCount = 0, // 실제 구현에서는 판매량 정보가 필요함 (별도 엔티티 또는 집계 데이터)
             )
         }

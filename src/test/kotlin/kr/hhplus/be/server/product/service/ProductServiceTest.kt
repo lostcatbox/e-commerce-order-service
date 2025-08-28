@@ -158,7 +158,7 @@ class ProductServiceTest {
         // then
         assertEquals(product, result)
         assertEquals(1L, result.price)
-        assertEquals(0, result.stock)
+        assertEquals(0, result.getStock())
         verify(productRepository, times(1)).findByProductId(productId)
     }
 }

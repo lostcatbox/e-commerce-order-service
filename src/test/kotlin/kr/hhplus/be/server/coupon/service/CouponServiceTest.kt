@@ -108,12 +108,11 @@ class CouponServiceTest {
                     stock = 100,
                     couponStatus = CouponStatus.OPENED,
                 )
-            val issuedCoupon = coupon.issueCoupon()
             val userCoupon = UserCoupon.issueCoupon(userId, couponId)
 
             `when`(couponRepository.findByCouponId(couponId)).thenReturn(coupon)
             `when`(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).thenReturn(null)
-            `when`(couponRepository.save(issuedCoupon)).thenReturn(issuedCoupon)
+            `when`(couponRepository.save(coupon)).thenReturn(coupon)
             `when`(userCouponRepository.save(any())).thenReturn(userCoupon)
 
             // when
@@ -122,11 +121,11 @@ class CouponServiceTest {
             // then
             assertEquals(userId, result.userId)
             assertEquals(couponId, result.couponId)
-            assertEquals(UserCouponStatus.ISSUED, result.status)
+            assertEquals(UserCouponStatus.ISSUED, result.getStatus())
 
             verify(couponRepository).findByCouponId(couponId)
             verify(userCouponRepository).findByUserIdAndCouponId(userId, couponId)
-            verify(couponRepository).save(issuedCoupon)
+            verify(couponRepository).save(coupon)
             verify(userCouponRepository).save(any())
         }
 

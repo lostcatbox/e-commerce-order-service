@@ -20,8 +20,8 @@ class UserPointTest {
 
         // then
         assertEquals(userId, userPoint.userId)
-        assertEquals(balance, userPoint.balance)
-        assertTrue(userPoint.lastUpdatedAt > 0)
+        assertEquals(balance, userPoint.getBalance())
+        assertTrue(userPoint.getLastUpdatedAt() > 0)
     }
 
     @Test
@@ -60,12 +60,12 @@ class UserPointTest {
         val chargeAmount = 30000L
 
         // when
-        val chargedUserPoint = userPoint.charge(chargeAmount)
+        val originalUpdatedAt = userPoint.getLastUpdatedAt()
+        userPoint.charge(chargeAmount)
 
         // then
-        assertEquals(80000L, chargedUserPoint.balance)
-        assertEquals(userPoint.userId, chargedUserPoint.userId)
-        assertTrue(chargedUserPoint.lastUpdatedAt >= userPoint.lastUpdatedAt)
+        assertEquals(80000L, userPoint.getBalance())
+        assertTrue(userPoint.getLastUpdatedAt() >= originalUpdatedAt)
     }
 
     @Test
@@ -118,12 +118,12 @@ class UserPointTest {
         val useAmount = 30000L
 
         // when
-        val usedUserPoint = userPoint.use(useAmount)
+        val originalUpdatedAt = userPoint.getLastUpdatedAt()
+        userPoint.use(useAmount)
 
         // then
-        assertEquals(20000L, usedUserPoint.balance)
-        assertEquals(userPoint.userId, usedUserPoint.userId)
-        assertTrue(usedUserPoint.lastUpdatedAt >= userPoint.lastUpdatedAt)
+        assertEquals(20000L, userPoint.getBalance())
+        assertTrue(userPoint.getLastUpdatedAt() >= originalUpdatedAt)
     }
 
     @Test
@@ -179,7 +179,7 @@ class UserPointTest {
         val userPoint = UserPoint(userId, maxBalance)
 
         // then
-        assertEquals(maxBalance, userPoint.balance)
+        assertEquals(maxBalance, userPoint.getBalance())
     }
 
     @Test
@@ -193,7 +193,7 @@ class UserPointTest {
         val userPoint = UserPoint(userId, minBalance)
 
         // then
-        assertEquals(minBalance, userPoint.balance)
+        assertEquals(minBalance, userPoint.getBalance())
     }
 
     @Test
@@ -204,10 +204,10 @@ class UserPointTest {
         val maxChargeAmount = UserPoint.MAX_CHARGE_AMOUNT
 
         // when
-        val chargedUserPoint = userPoint.charge(maxChargeAmount)
+        userPoint.charge(maxChargeAmount)
 
         // then
-        assertEquals(maxChargeAmount, chargedUserPoint.balance)
+        assertEquals(maxChargeAmount, userPoint.getBalance())
     }
 
     @Test
@@ -218,9 +218,9 @@ class UserPointTest {
         val minChargeAmount = UserPoint.MIN_CHARGE_AMOUNT
 
         // when
-        val chargedUserPoint = userPoint.charge(minChargeAmount)
+        userPoint.charge(minChargeAmount)
 
         // then
-        assertEquals(minChargeAmount, chargedUserPoint.balance)
+        assertEquals(minChargeAmount, userPoint.getBalance())
     }
 }

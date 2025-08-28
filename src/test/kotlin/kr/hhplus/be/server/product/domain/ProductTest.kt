@@ -25,7 +25,7 @@ class ProductTest {
         assertEquals(name, product.name)
         assertEquals(description, product.description)
         assertEquals(price, product.price)
-        assertEquals(stock, product.stock)
+        assertEquals(stock, product.getStock())
     }
 
     @Test
@@ -108,14 +108,10 @@ class ProductTest {
         val sellQuantity = 30
 
         // when
-        val soldProduct = product.sellProduct(sellQuantity)
+        product.sellProduct(sellQuantity)
 
         // then
-        assertEquals(70, soldProduct.stock)
-        assertEquals(product.productId, soldProduct.productId)
-        assertEquals(product.name, soldProduct.name)
-        assertEquals(product.description, soldProduct.description)
-        assertEquals(product.price, soldProduct.price)
+        assertEquals(70, product.getStock())
     }
 
     @Test
@@ -156,12 +152,10 @@ class ProductTest {
         val addQuantity = 50
 
         // when
-        val updatedProduct = product.addStock(addQuantity)
+        product.addStock(addQuantity)
 
         // then
-        assertEquals(150, updatedProduct.stock)
-        assertEquals(product.productId, updatedProduct.productId)
-        assertEquals(product.name, updatedProduct.name)
+        assertEquals(150, product.getStock())
     }
 
     @Test
@@ -250,7 +244,7 @@ class ProductTest {
         val product = Product(productId, name, description, price, maxStock)
 
         // then
-        assertEquals(maxStock, product.stock)
+        assertEquals(maxStock, product.getStock())
     }
 
     @Test
@@ -267,7 +261,7 @@ class ProductTest {
         val product = Product(productId, name, description, price, minStock)
 
         // then
-        assertEquals(minStock, product.stock)
+        assertEquals(minStock, product.getStock())
     }
 
     @Test
@@ -278,10 +272,10 @@ class ProductTest {
         val sellQuantity = 50
 
         // when
-        val soldProduct = product.sellProduct(sellQuantity)
+        product.sellProduct(sellQuantity)
 
         // then
-        assertEquals(0, soldProduct.stock)
+        assertEquals(0, product.getStock())
     }
 
     @Test
@@ -292,9 +286,9 @@ class ProductTest {
         val minQuantity = Product.MIN_QUANTITY
 
         // when
-        val soldProduct = product.sellProduct(minQuantity)
+        product.sellProduct(minQuantity)
 
         // then
-        assertEquals(99, soldProduct.stock)
+        assertEquals(99, product.getStock())
     }
 }

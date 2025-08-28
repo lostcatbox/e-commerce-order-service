@@ -59,7 +59,7 @@ class PointServiceTest {
 
         // then
         assertEquals(userId, result.userId)
-        assertEquals(0L, result.balance)
+        assertEquals(0L, result.getBalance())
         verify(userPointRepository).findByUserId(userId)
     }
 
@@ -94,7 +94,7 @@ class PointServiceTest {
         val result = pointService.chargePoint(userId, chargeAmount)
 
         // then
-        assertEquals(80000L, result.balance)
+        assertEquals(80000L, result.getBalance())
         assertEquals(userId, result.userId)
 
         verify(userPointRepository).findByUserId(userId)
@@ -116,7 +116,7 @@ class PointServiceTest {
         val result = pointService.chargePoint(userId, chargeAmount)
 
         // then
-        assertEquals(30000L, result.balance)
+        assertEquals(30000L, result.getBalance())
         assertEquals(userId, result.userId)
 
         verify(userPointRepository).findByUserId(userId)
@@ -196,7 +196,7 @@ class PointServiceTest {
         val result = pointService.chargePoint(userId, maxChargeAmount)
 
         // then
-        assertEquals(maxChargeAmount, result.balance)
+        assertEquals(maxChargeAmount, result.getBalance())
         verify(userPointRepository).save(any<UserPoint>())
     }
 
@@ -216,7 +216,7 @@ class PointServiceTest {
         val result = pointService.chargePoint(userId, minChargeAmount)
 
         // then
-        assertEquals(minChargeAmount, result.balance)
+        assertEquals(minChargeAmount, result.getBalance())
         verify(userPointRepository).save(any<UserPoint>())
     }
 }

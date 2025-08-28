@@ -47,10 +47,10 @@ class CouponService(
         }
 
         // 도메인 로직을 통한 쿠폰 발급 (재고 차감)
-        val issuedCoupon = coupon.issueCoupon()
+        coupon.issueCoupon()
         
         // 재고 차감된 쿠폰 저장
-        couponRepository.save(issuedCoupon)
+        couponRepository.save(coupon)
 
         // 유저 쿠폰 생성 및 저장
         val userCoupon = UserCoupon.issueCoupon(userId, couponId)

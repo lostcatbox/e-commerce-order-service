@@ -40,10 +40,10 @@ class PointService(
                 ?: UserPoint(userId = userId, balance = 0L)
 
         // 도메인 로직을 통한 포인트 충전
-        val chargedUserPoint = currentUserPoint.charge(amount)
+        currentUserPoint.charge(amount)
 
         // 충전된 포인트 저장
-        return userPointRepository.save(chargedUserPoint)
+        return userPointRepository.save(currentUserPoint)
     }
 
     /**

@@ -37,9 +37,9 @@ class CouponController(
         return UserCouponsResponse.UserCouponInfo(
             userId = userCoupon.userId,
             couponId = userCoupon.couponId,
-            status = userCoupon.status,
+            status = userCoupon.getStatus(),
             issuedAt = userCoupon.issuedAt,
-            usedAt = userCoupon.usedAt
+            usedAt = userCoupon.getUsedAt()
         )
     }
 

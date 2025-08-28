@@ -3,12 +3,12 @@ package kr.hhplus.be.server.coupon.domain
 /**
  * 유저 쿠폰 도메인 모델
  */
-data class UserCoupon(
+class UserCoupon(
     val userId: Long,
     val couponId: Long,
-    val status: UserCouponStatus,
+    private var status: UserCouponStatus,
     val issuedAt: Long = System.currentTimeMillis(),
-    val usedAt: Long? = null,
+    private var usedAt: Long? = null,
 ) {
     companion object {
         /**
@@ -31,16 +31,23 @@ data class UserCoupon(
     }
 
     /**
-     * 쿠폰 사용
-     * @return 사용된 UserCoupon
+     * 현재 상태 조회
      */
-    fun use(): UserCoupon {
+    fun getStatus(): UserCouponStatus = status
+
+    /**
+     * 사용 시간 조회
+     */
+    fun getUsedAt(): Long? = usedAt
+
+    /**
+     * 쿠폰 사용
+     */
+    fun use() {
         require(isUsable()) { "쿠폰이 사용 가능한 상태가 아닙니다. 현재 상태: $status" }
 
-        return copy(
-            status = UserCouponStatus.USED,
-            usedAt = System.currentTimeMillis()
-        )
+        this.status = UserCouponStatus.USED
+        this.usedAt = System.currentTimeMillis()
     }
 
     /**

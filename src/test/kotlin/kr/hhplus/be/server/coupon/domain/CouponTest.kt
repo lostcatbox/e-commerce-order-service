@@ -37,8 +37,8 @@ class CouponTest {
             assertEquals(couponId, coupon.couponId)
             assertEquals(description, coupon.description)
             assertEquals(discountAmount, coupon.discountAmount)
-            assertEquals(stock, coupon.stock)
-            assertEquals(couponStatus, coupon.couponStatus)
+            assertEquals(stock, coupon.getStock())
+            assertEquals(couponStatus, coupon.getCouponStatus())
         }
 
         @Test
@@ -143,10 +143,10 @@ class CouponTest {
                 )
 
             // when
-            val issuedCoupon = coupon.issueCoupon()
+            coupon.issueCoupon()
 
             // then
-            assertEquals(99, issuedCoupon.stock)
+            assertEquals(99, coupon.getStock())
         }
 
         @Test
@@ -335,11 +335,11 @@ class CouponTest {
                 )
 
             // when
-            val closedCoupon = coupon.close()
+            coupon.close()
 
             // then
-            assertEquals(CouponStatus.CLOSED, closedCoupon.couponStatus)
-            assertFalse(closedCoupon.isOpened())
+            assertEquals(CouponStatus.CLOSED, coupon.getCouponStatus())
+            assertFalse(coupon.isOpened())
         }
     }
 }

@@ -3,12 +3,12 @@ package kr.hhplus.be.server.product.domain
 /**
  * 상품 도메인 모델
  */
-data class Product(
+class Product(
     val productId: Long,
     val name: String,
     val description: String,
     val price: Long,
-    val stock: Int,
+    private var stock: Int,
 ) {
     companion object {
         const val MIN_STOCK = 0 // 최소 재고량
@@ -24,29 +24,32 @@ data class Product(
     }
 
     /**
+     * 현재 재고량 조회
+     */
+    fun getStock(): Int = stock
+
+    /**
      * 상품 판매 (재고 차감)
      * @param quantity 판매할 수량
-     * @return 재고가 차감된 Product
      */
-    fun sellProduct(quantity: Int): Product {
+    fun sellProduct(quantity: Int) {
         validateSellQuantity(quantity)
         val newStock = stock - quantity
         validateStock(newStock)
 
-        return copy(stock = newStock)
+        this.stock = newStock
     }
 
     /**
      * 재고 추가
      * @param quantity 추가할 재고 수량
-     * @return 재고가 추가된 Product
      */
-    fun addStock(quantity: Int): Product {
+    fun addStock(quantity: Int) {
         require(quantity > 0) { "추가할 재고 수량은 0보다 커야 합니다. 요청 수량: $quantity" }
         val newStock = stock + quantity
         validateStock(newStock)
 
-        return copy(stock = newStock)
+        this.stock = newStock
     }
 
     /**

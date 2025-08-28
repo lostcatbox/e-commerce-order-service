@@ -28,9 +28,9 @@ class UserCouponTest {
             // then
             assertEquals(userId, userCoupon.userId)
             assertEquals(couponId, userCoupon.couponId)
-            assertEquals(UserCouponStatus.ISSUED, userCoupon.status)
+            assertEquals(UserCouponStatus.ISSUED, userCoupon.getStatus())
             assertNotNull(userCoupon.issuedAt)
-            assertNull(userCoupon.usedAt)
+            assertNull(userCoupon.getUsedAt())
         }
 
         @Test
@@ -76,11 +76,11 @@ class UserCouponTest {
             val userCoupon = UserCoupon.issueCoupon(1L, 1L)
 
             // when
-            val usedCoupon = userCoupon.use()
+            userCoupon.use()
 
             // then
-            assertEquals(UserCouponStatus.USED, usedCoupon.status)
-            assertNotNull(usedCoupon.usedAt)
+            assertEquals(UserCouponStatus.USED, userCoupon.getStatus())
+            assertNotNull(userCoupon.getUsedAt())
         }
 
         @Test
@@ -88,12 +88,12 @@ class UserCouponTest {
         fun `이미_사용된_쿠폰은_다시_사용할_수_없다`() {
             // given
             val userCoupon = UserCoupon.issueCoupon(1L, 1L)
-            val usedCoupon = userCoupon.use()
+            userCoupon.use()
 
             // when & then
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    usedCoupon.use()
+                    userCoupon.use()
                 }
 
             assertEquals("쿠폰이 사용 가능한 상태가 아닙니다. 현재 상태: USED", exception.message)
@@ -118,10 +118,10 @@ class UserCouponTest {
         fun `사용된_쿠폰은_사용_불가능하다`() {
             // given
             val userCoupon = UserCoupon.issueCoupon(1L, 1L)
-            val usedCoupon = userCoupon.use()
+            userCoupon.use()
 
             // when & then
-            assertFalse(usedCoupon.isUsable())
+            assertFalse(userCoupon.isUsable())
         }
     }
 
@@ -150,9 +150,9 @@ class UserCouponTest {
             // then
             assertEquals(userId, userCoupon.userId)
             assertEquals(couponId, userCoupon.couponId)
-            assertEquals(status, userCoupon.status)
+            assertEquals(status, userCoupon.getStatus())
             assertEquals(issuedAt, userCoupon.issuedAt)
-            assertNull(userCoupon.usedAt)
+            assertNull(userCoupon.getUsedAt())
         }
     }
 }
