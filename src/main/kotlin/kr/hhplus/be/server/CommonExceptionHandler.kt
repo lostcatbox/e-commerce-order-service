@@ -1,4 +1,4 @@
-package io.hhplus.tdd
+package kr.hhplus.be.server
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,10 +17,30 @@ data class ErrorResponse(
 class CommonExceptionHandler : ResponseEntityExceptionHandler() {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgumentException(e: IllegalArgumentException): ResponseEntity<ErrorResponse> {
+        logger.warn("IllegalArgumentException occurred: ${e.message}")
+        return ResponseEntity(
+            ErrorResponse("400", e.message ?: "잘못된 요청입니다."),
+            HttpStatus.BAD_REQUEST,
+        )
+    }
+
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleIllegalStateException(e: IllegalStateException): ResponseEntity<ErrorResponse> {
+        logger.warn("IllegalStateException occurred: ${e.message}")
+        return ResponseEntity(
+            ErrorResponse("400", e.message ?: "잘못된 상태입니다."),
+            HttpStatus.BAD_REQUEST,
+        )
+    }
+
     @ExceptionHandler(Exception::class)
-    fun handleException(e: Exception): ResponseEntity<ErrorResponse> =
-        ResponseEntity(
+    fun handleException(e: Exception): ResponseEntity<ErrorResponse> {
+        logger.error("Unexpected exception occurred", e)
+        return ResponseEntity(
             ErrorResponse("500", "에러가 발생했습니다."),
             HttpStatus.INTERNAL_SERVER_ERROR,
         )
+    }
 }
