@@ -23,6 +23,13 @@ interface UserCouponRepository {
     fun findByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon?
 
     /**
+     * 사용자 쿠폰 ID로 조회
+     * @param userCouponId 사용자 쿠폰 ID
+     * @return UserCoupon 또는 null (쿠폰이 존재하지 않는 경우)
+     */
+    fun findByUserCouponId(userCouponId: Long): UserCoupon?
+
+    /**
      * 유저 쿠폰 저장/업데이트
      * @param userCoupon 저장할 유저 쿠폰
      * @return 저장된 UserCoupon

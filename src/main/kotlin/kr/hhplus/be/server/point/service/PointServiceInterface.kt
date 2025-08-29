@@ -23,4 +23,15 @@ interface PointServiceInterface {
         userId: Long,
         amount: Long,
     ): UserPoint
+
+    /**
+     * 사용자 포인트 사용
+     * @param userId 사용자 ID
+     * @param amount 사용할 금액
+     * @return 사용된 UserPoint
+     */
+    fun usePoint(
+        userId: Long,
+        amount: Long,
+    ): UserPoint
 }

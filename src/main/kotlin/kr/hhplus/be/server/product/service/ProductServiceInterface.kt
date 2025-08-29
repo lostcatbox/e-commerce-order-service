@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.product.service
 
 import kr.hhplus.be.server.product.domain.Product
+import kr.hhplus.be.server.product.domain.SaleProductsCommand
 
 /**
  * 상품 서비스 인터페이스
@@ -18,4 +19,10 @@ interface ProductServiceInterface {
      * @return 인기 상품 목록
      */
     fun getPopularProducts(): List<Product>
+
+    /**
+     * 주문 상품들 판매 처리 (재고 차감)
+     * @param command 상품 판매 처리 커맨드
+     */
+    fun saleOrderProducts(command: SaleProductsCommand)
 }

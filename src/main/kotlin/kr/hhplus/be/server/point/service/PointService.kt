@@ -47,6 +47,27 @@ class PointService(
     }
 
     /**
+     * 사용자 포인트 사용
+     */
+    @Transactional
+    override fun usePoint(
+        userId: Long,
+        amount: Long,
+    ): UserPoint {
+        validateUserId(userId)
+
+        // 기존 포인트 조회
+        val currentUserPoint = userPointRepository.findByUserId(userId)
+            ?: throw IllegalArgumentException("존재하지 않는 사용자의 포인트입니다. 사용자 ID: $userId")
+
+        // 도메인 로직을 통한 포인트 사용
+        currentUserPoint.use(amount)
+
+        // 사용된 포인트 저장
+        return userPointRepository.save(currentUserPoint)
+    }
+
+    /**
      * 사용자 ID 유효성 검증
      */
     private fun validateUserId(userId: Long) {

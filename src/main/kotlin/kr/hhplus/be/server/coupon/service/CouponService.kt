@@ -68,6 +68,34 @@ class CouponService(
     }
 
     /**
+     * 발급된 쿠폰 사용
+     */
+    @Transactional
+    override fun useIssuedCoupon(userCouponId: Long?): Coupon? {
+        if (userCouponId == null) {
+            return null
+        }
+
+        validateUserCouponId(userCouponId)
+
+        // 사용자 쿠폰 조회
+        val userCoupon = userCouponRepository.findByUserCouponId(userCouponId)
+            ?: throw IllegalArgumentException("존재하지 않는 사용자 쿠폰입니다. 사용자 쿠폰 ID: $userCouponId")
+
+        // 쿠폰 정보 조회
+        val coupon = couponRepository.findByCouponId(userCoupon.couponId)
+            ?: throw IllegalArgumentException("존재하지 않는 쿠폰입니다. 쿠폰 ID: ${userCoupon.couponId}")
+
+        // 도메인 로직을 통한 쿠폰 사용
+        userCoupon.use()
+
+        // 사용된 사용자 쿠폰 저장
+        userCouponRepository.save(userCoupon)
+
+        return coupon
+    }
+
+    /**
      * 사용자 ID 유효성 검증
      */
     private fun validateUserId(userId: Long) {
@@ -79,5 +107,12 @@ class CouponService(
      */
     private fun validateCouponId(couponId: Long) {
         require(couponId > 0) { "쿠폰 ID는 0보다 커야 합니다. 입력된 ID: $couponId" }
+    }
+
+    /**
+     * 사용자 쿠폰 ID 유효성 검증
+     */
+    private fun validateUserCouponId(userCouponId: Long) {
+        require(userCouponId > 0) { "사용자 쿠폰 ID는 0보다 커야 합니다. 입력된 ID: $userCouponId" }
     }
 }

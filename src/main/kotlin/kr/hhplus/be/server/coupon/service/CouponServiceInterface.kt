@@ -29,4 +29,11 @@ interface CouponServiceInterface {
      * @return 사용자의 쿠폰 목록
      */
     fun getUserCoupons(userId: Long): List<UserCoupon>
+
+    /**
+     * 발급된 쿠폰 사용
+     * @param userCouponId 사용자 쿠폰 ID
+     * @return 사용된 쿠폰 정보
+     */
+    fun useIssuedCoupon(userCouponId: Long?): Coupon?
 }
