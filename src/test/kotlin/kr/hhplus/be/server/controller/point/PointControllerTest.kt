@@ -1,8 +1,8 @@
 package kr.hhplus.be.server.controller.point
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kr.hhplus.be.server.point.domain.UserPoint
-import kr.hhplus.be.server.point.service.PointServiceInterface
+import kr.hhplus.be.server.core.point.domain.UserPoint
+import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -35,11 +35,12 @@ class PointControllerTest {
     fun getPointBalance() {
         // given
         val userId = 1L
-        val userPoint = UserPoint(
-            userId = userId,
-            balance = 50000L,
-            lastUpdatedAt = System.currentTimeMillis()
-        )
+        val userPoint =
+            UserPoint(
+                userId = userId,
+                balance = 50000L,
+                lastUpdatedAt = System.currentTimeMillis(),
+            )
 
         given(pointService.getPointBalance(userId)).willReturn(userPoint)
 
@@ -62,16 +63,18 @@ class PointControllerTest {
         // given
         val userId = 1L
         val chargeAmount = 10000L
-        val previousUserPoint = UserPoint(
-            userId = userId,
-            balance = 50000L,
-            lastUpdatedAt = System.currentTimeMillis()
-        )
-        val chargedUserPoint = UserPoint(
-            userId = userId,
-            balance = 60000L,
-            lastUpdatedAt = System.currentTimeMillis()
-        )
+        val previousUserPoint =
+            UserPoint(
+                userId = userId,
+                balance = 50000L,
+                lastUpdatedAt = System.currentTimeMillis(),
+            )
+        val chargedUserPoint =
+            UserPoint(
+                userId = userId,
+                balance = 60000L,
+                lastUpdatedAt = System.currentTimeMillis(),
+            )
         val request = mapOf("amount" to chargeAmount)
 
         given(pointService.getPointBalance(userId)).willReturn(previousUserPoint)

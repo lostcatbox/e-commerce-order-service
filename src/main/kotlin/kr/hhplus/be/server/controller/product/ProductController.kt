@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.controller.product
 
 import kr.hhplus.be.server.controller.product.dto.*
-import kr.hhplus.be.server.product.service.ProductServiceInterface
+import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -22,14 +22,15 @@ class ProductController(
         @PathVariable productId: Long,
     ): ResponseEntity<ProductResponse> {
         val product = productService.getProduct(productId)
-        
-        val response = ProductResponse(
-            productId = product.productId,
-            name = product.name,
-            description = product.description,
-            price = product.price,
-            stock = product.getStock(),
-        )
+
+        val response =
+            ProductResponse(
+                productId = product.productId,
+                name = product.name,
+                description = product.description,
+                price = product.price,
+                stock = product.getStock(),
+            )
         return ResponseEntity.ok(response)
     }
 
@@ -40,22 +41,24 @@ class ProductController(
     @GetMapping("/popular")
     fun getPopularProducts(): ResponseEntity<PopularProductsResponse> {
         val popularProducts = productService.getPopularProducts()
-        
-        val productsInfo = popularProducts.map { product ->
-            PopularProductInfo(
-                productId = product.productId,
-                name = product.name,
-                description = product.description,
-                price = product.price,
-                stock = product.getStock(),
-                salesCount = 0, // 실제 구현에서는 판매량 정보가 필요함 (별도 엔티티 또는 집계 데이터)
-            )
-        }
 
-        val response = PopularProductsResponse(
-            products = productsInfo,
-            generatedAt = System.currentTimeMillis(),
-        )
+        val productsInfo =
+            popularProducts.map { product ->
+                PopularProductInfo(
+                    productId = product.productId,
+                    name = product.name,
+                    description = product.description,
+                    price = product.price,
+                    stock = product.getStock(),
+                    salesCount = 0, // 실제 구현에서는 판매량 정보가 필요함 (별도 엔티티 또는 집계 데이터)
+                )
+            }
+
+        val response =
+            PopularProductsResponse(
+                products = productsInfo,
+                generatedAt = System.currentTimeMillis(),
+            )
         return ResponseEntity.ok(response)
     }
 }

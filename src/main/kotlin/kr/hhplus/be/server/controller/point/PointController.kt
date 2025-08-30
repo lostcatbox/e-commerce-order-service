@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.controller.point
 
 import kr.hhplus.be.server.controller.point.dto.*
-import kr.hhplus.be.server.point.service.PointServiceInterface
+import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -11,24 +11,24 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/points")
 class PointController(
-    private val pointService: PointServiceInterface
+    private val pointService: PointServiceInterface,
 ) {
-
     /**
      * 사용자 포인트 잔액 조회
      * GET /api/v1/points/{userId}
      */
     @GetMapping("/{userId}")
     fun getPointBalance(
-        @PathVariable userId: Long
+        @PathVariable userId: Long,
     ): ResponseEntity<PointBalanceResponse> {
         val userPoint = pointService.getPointBalance(userId)
 
-        val response = PointBalanceResponse(
-            userId = userPoint.userId,
-            balance = userPoint.getBalance(),
-            lastUpdatedAt = userPoint.getLastUpdatedAt()
-        )
+        val response =
+            PointBalanceResponse(
+                userId = userPoint.userId,
+                balance = userPoint.getBalance(),
+                lastUpdatedAt = userPoint.getLastUpdatedAt(),
+            )
         return ResponseEntity.ok(response)
     }
 
@@ -39,7 +39,7 @@ class PointController(
     @PatchMapping("/{userId}/charge")
     fun chargePoint(
         @PathVariable userId: Long,
-        @RequestBody request: PointChargeRequest
+        @RequestBody request: PointChargeRequest,
     ): ResponseEntity<PointChargeResponse> {
         // 충전 전 잔액 조회
         val previousUserPoint = pointService.getPointBalance(userId)
@@ -47,13 +47,14 @@ class PointController(
         // 포인트 충전
         val chargedUserPoint = pointService.chargePoint(userId, request.amount)
 
-        val response = PointChargeResponse(
-            userId = chargedUserPoint.userId,
-            chargedAmount = request.amount,
-            previousBalance = previousUserPoint.getBalance(),
-            currentBalance = chargedUserPoint.getBalance(),
-            chargedAt = chargedUserPoint.getLastUpdatedAt()
-        )
+        val response =
+            PointChargeResponse(
+                userId = chargedUserPoint.userId,
+                chargedAmount = request.amount,
+                previousBalance = previousUserPoint.getBalance(),
+                currentBalance = chargedUserPoint.getBalance(),
+                chargedAt = chargedUserPoint.getLastUpdatedAt(),
+            )
         return ResponseEntity.ok(response)
     }
 }

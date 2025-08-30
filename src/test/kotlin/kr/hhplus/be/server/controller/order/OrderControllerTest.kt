@@ -1,10 +1,10 @@
 package kr.hhplus.be.server.controller.order
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kr.hhplus.be.server.facade.OrderFacade
-import kr.hhplus.be.server.order.domain.Order
-import kr.hhplus.be.server.order.domain.OrderItem
-import kr.hhplus.be.server.order.domain.OrderStatus
+import kr.hhplus.be.server.core.order.domain.Order
+import kr.hhplus.be.server.core.order.domain.OrderItem
+import kr.hhplus.be.server.core.order.domain.OrderStatus
+import kr.hhplus.be.server.facade.order.OrderFacade
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -39,28 +39,32 @@ class OrderControllerTest {
         val userId = 1L
         val orderId = 100L
         val paymentId = 200L
-        
-        val completedOrder = Order(
-            orderId = orderId,
-            userId = userId,
-            orderItems = listOf(
-                OrderItem(productId = 1L, quantity = 2, unitPrice = 10000L),
-                OrderItem(productId = 2L, quantity = 1, unitPrice = 20000L)
-            ),
-            orderStatus = OrderStatus.COMPLETED,
-            usedCouponId = 10L,
-            paymentId = paymentId,
-            createdAt = System.currentTimeMillis()
-        )
-        
-        val request = mapOf(
-            "userId" to userId,
-            "orderItems" to listOf(
-                mapOf("productId" to 1L, "quantity" to 2),
-                mapOf("productId" to 2L, "quantity" to 1),
-            ),
-            "couponId" to 10L,
-        )
+
+        val completedOrder =
+            Order(
+                orderId = orderId,
+                userId = userId,
+                orderItems =
+                    listOf(
+                        OrderItem(productId = 1L, quantity = 2, unitPrice = 10000L),
+                        OrderItem(productId = 2L, quantity = 1, unitPrice = 20000L),
+                    ),
+                orderStatus = OrderStatus.COMPLETED,
+                usedCouponId = 10L,
+                paymentId = paymentId,
+                createdAt = System.currentTimeMillis(),
+            )
+
+        val request =
+            mapOf(
+                "userId" to userId,
+                "orderItems" to
+                    listOf(
+                        mapOf("productId" to 1L, "quantity" to 2),
+                        mapOf("productId" to 2L, "quantity" to 1),
+                    ),
+                "couponId" to 10L,
+            )
 
         given(orderFacade.processOrder(any())).willReturn(completedOrder)
 
@@ -97,25 +101,29 @@ class OrderControllerTest {
         val userId = 1L
         val orderId = 100L
         val paymentId = 200L
-        
-        val completedOrder = Order(
-            orderId = orderId,
-            userId = userId,
-            orderItems = listOf(
-                OrderItem(productId = 1L, quantity = 1, unitPrice = 15000L)
-            ),
-            orderStatus = OrderStatus.COMPLETED,
-            usedCouponId = null,
-            paymentId = paymentId,
-            createdAt = System.currentTimeMillis()
-        )
-        
-        val request = mapOf(
-            "userId" to userId,
-            "orderItems" to listOf(
-                mapOf("productId" to 1L, "quantity" to 1)
+
+        val completedOrder =
+            Order(
+                orderId = orderId,
+                userId = userId,
+                orderItems =
+                    listOf(
+                        OrderItem(productId = 1L, quantity = 1, unitPrice = 15000L),
+                    ),
+                orderStatus = OrderStatus.COMPLETED,
+                usedCouponId = null,
+                paymentId = paymentId,
+                createdAt = System.currentTimeMillis(),
             )
-        )
+
+        val request =
+            mapOf(
+                "userId" to userId,
+                "orderItems" to
+                    listOf(
+                        mapOf("productId" to 1L, "quantity" to 1),
+                    ),
+            )
 
         given(orderFacade.processOrder(any())).willReturn(completedOrder)
 

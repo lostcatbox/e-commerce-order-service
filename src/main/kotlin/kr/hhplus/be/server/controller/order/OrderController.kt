@@ -1,9 +1,7 @@
 package kr.hhplus.be.server.controller.order
 
 import kr.hhplus.be.server.controller.order.dto.*
-import kr.hhplus.be.server.facade.OrderCriteria
-import kr.hhplus.be.server.facade.OrderFacade
-import kr.hhplus.be.server.facade.OrderItemCriteria
+import kr.hhplus.be.server.facade.order.OrderFacade
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 

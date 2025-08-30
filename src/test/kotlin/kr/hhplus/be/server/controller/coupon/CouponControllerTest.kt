@@ -2,10 +2,10 @@ package kr.hhplus.be.server.controller.coupon
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.hhplus.be.server.controller.coupon.dto.CouponIssueRequest
-import kr.hhplus.be.server.coupon.domain.Coupon
-import kr.hhplus.be.server.coupon.domain.CouponStatus
-import kr.hhplus.be.server.coupon.domain.UserCoupon
-import kr.hhplus.be.server.coupon.service.CouponServiceInterface
+import kr.hhplus.be.server.core.coupon.domain.Coupon
+import kr.hhplus.be.server.core.coupon.domain.CouponStatus
+import kr.hhplus.be.server.core.coupon.domain.UserCoupon
+import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

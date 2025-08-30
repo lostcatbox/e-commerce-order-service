@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.controller.product
 
-import kr.hhplus.be.server.product.domain.Product
-import kr.hhplus.be.server.product.service.ProductServiceInterface
+import kr.hhplus.be.server.core.product.domain.Product
+import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -28,22 +28,23 @@ class ProductControllerTest {
     @Test
     fun getPopularProducts() {
         // given
-        val popularProducts = listOf(
-            Product(
-                productId = 1L,
-                name = "인기상품 1",
-                description = "인기상품 1 설명",
-                price = 15000L,
-                stock = 100
-            ),
-            Product(
-                productId = 2L,
-                name = "인기상품 2", 
-                description = "인기상품 2 설명",
-                price = 25000L,
-                stock = 80
+        val popularProducts =
+            listOf(
+                Product(
+                    productId = 1L,
+                    name = "인기상품 1",
+                    description = "인기상품 1 설명",
+                    price = 15000L,
+                    stock = 100,
+                ),
+                Product(
+                    productId = 2L,
+                    name = "인기상품 2",
+                    description = "인기상품 2 설명",
+                    price = 25000L,
+                    stock = 80,
+                ),
             )
-        )
 
         given(productService.getPopularProducts()).willReturn(popularProducts)
 
@@ -71,13 +72,14 @@ class ProductControllerTest {
     fun getProduct() {
         // given
         val productId = 1L
-        val product = Product(
-            productId = productId,
-            name = "테스트 상품",
-            description = "테스트 상품 설명",
-            price = 20000L,
-            stock = 50
-        )
+        val product =
+            Product(
+                productId = productId,
+                name = "테스트 상품",
+                description = "테스트 상품 설명",
+                price = 20000L,
+                stock = 50,
+            )
 
         given(productService.getProduct(productId)).willReturn(product)
 
