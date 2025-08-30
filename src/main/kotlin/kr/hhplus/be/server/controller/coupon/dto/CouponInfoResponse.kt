@@ -1,14 +1,26 @@
 package kr.hhplus.be.server.controller.coupon.dto
 
+import kr.hhplus.be.server.core.coupon.domain.Coupon
+import kr.hhplus.be.server.core.coupon.domain.CouponStatus
+
 /**
- * 선착순 쿠폰 정보 조회 응답
+ * 쿠폰 정보 조회 응답 DTO
  */
 data class CouponInfoResponse(
     val couponId: Long,
-    val name: String,
     val description: String,
     val discountAmount: Long,
-    val totalStock: Int,
-    val remainingStock: Int,
-    val status: String, // OPENED, CLOSED
-)
+    val stock: Int,
+    val couponStatus: CouponStatus,
+) {
+    companion object {
+        fun from(coupon: Coupon): CouponInfoResponse =
+            CouponInfoResponse(
+                couponId = coupon.couponId,
+                description = coupon.description,
+                discountAmount = coupon.discountAmount,
+                stock = coupon.getStock(),
+                couponStatus = coupon.getCouponStatus(),
+            )
+    }
+}

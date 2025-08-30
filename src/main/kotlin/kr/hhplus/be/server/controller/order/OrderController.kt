@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.controller.order
 
 import kr.hhplus.be.server.controller.order.dto.*
+import kr.hhplus.be.server.facade.order.OrderFacade
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -9,7 +10,9 @@ import org.springframework.web.bind.annotation.*
  */
 @RestController
 @RequestMapping("/api/v1/orders")
-class OrderController {
+class OrderController(
+    private val orderFacade: OrderFacade,
+) {
     /**
      * 주문 생성 및 결제 처리
      * POST /api/v1/orders
@@ -18,35 +21,36 @@ class OrderController {
     fun createOrder(
         @RequestBody request: OrderCreateRequest,
     ): ResponseEntity<OrderCreateResponse> {
-        // TODO: 주문 생성 및 결제 서비스 호출
-        val mockOrderItems =
-            request.orderItems.map { item ->
-                OrderItemInfo(
-                    productId = item.productId,
-                    productName = "상품 ${item.productId}",
-                    quantity = item.quantity,
-                    unitPrice = 10000L,
-                    totalPrice = 10000L * item.quantity,
+        try {
+            // OrderFacade를 통한 주문 처리
+            val completedOrder = orderFacade.processOrder(request.toOrderCriteria())
+
+            // 응답 DTO 생성
+            val orderItemInfos =
+                completedOrder.orderItems.map { orderItem ->
+                    OrderItemInfo(
+                        productId = orderItem.productId,
+                        quantity = orderItem.quantity,
+                        unitPrice = orderItem.unitPrice,
+                        totalPrice = orderItem.calculateTotalPrice(),
+                    )
+                }
+
+            val response =
+                OrderCreateResponse(
+                    orderId = completedOrder.orderId,
+                    userId = completedOrder.userId,
+                    orderItems = orderItemInfos,
+                    paymentId = completedOrder.getPaymentId() ?: 0L,
+                    orderStatus = completedOrder.getOrderStatus().name,
+                    usedCouponId = completedOrder.usedCouponId,
+                    createdAt = completedOrder.getCreatedAt(),
                 )
-            }
 
-        val totalAmount = mockOrderItems.sumOf { it.totalPrice }
-        val discountAmount = if (request.couponId != null) 5000L else 0L
-
-        val mockResponse =
-            OrderCreateResponse(
-                orderId = System.currentTimeMillis(),
-                userId = request.userId,
-                orderItems = mockOrderItems,
-                originalAmount = totalAmount,
-                discountAmount = discountAmount,
-                finalAmount = totalAmount - discountAmount,
-                paymentId = System.currentTimeMillis() + 1,
-                orderStatus = "SUCCESS",
-                paymentStatus = "SUCCESS",
-                usedCouponId = request.couponId,
-                createdAt = System.currentTimeMillis(),
-            )
-        return ResponseEntity.ok(mockResponse)
+            return ResponseEntity.ok(response)
+        } catch (e: Exception) {
+            // TODO : 적절한 예외 처리 및 응답 반환
+            throw e
+        }
     }
 }

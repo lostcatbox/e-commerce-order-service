@@ -1,8 +1,9 @@
 package kr.hhplus.be.server.controller.coupon.dto
 
 /**
- * 선착순 쿠폰 발급 요청
+ * 쿠폰 발급 요청 DTO
  */
 data class CouponIssueRequest(
     val userId: Long,
+    val couponId: Long,
 )

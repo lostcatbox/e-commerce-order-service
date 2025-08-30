@@ -121,7 +121,7 @@ classDiagram
         -Long userId
         -Long couponId
         -UserCouponStatus status
-        +issueCoupon(userId: Long, couponId: Long) UserCoupon
+        +issueUserCoupon(userId: Long, couponId: Long) UserCoupon
         +use() void
         +isUsable() boolean // 쿠폰이 사용가능한지 확인
     }
