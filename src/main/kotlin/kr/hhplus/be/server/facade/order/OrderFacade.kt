@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.facade.order
 
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
+import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.service.OrderServiceInterface
 import kr.hhplus.be.server.core.payment.domain.ProcessPaymentCommand
@@ -30,6 +31,7 @@ class OrderFacade(
     private val productService: ProductServiceInterface,
     private val paymentService: PaymentServiceInterface,
     private val couponService: CouponServiceInterface,
+    private val userCouponService: UserCouponServiceInterface,
 ) {
     /**
      * 주문 처리 전체 프로세스
@@ -48,8 +50,16 @@ class OrderFacade(
         // 4. 상품 재고 확인 및 차감
         productService.saleOrderProducts(orderCriteria.toSaleProductsCommand())
 
-        // 5. 발급된 쿠폰 사용 및 쿠폰 정보 조회
-        val coupon = couponService.useIssuedCoupon(orderCriteria.usedCouponId)
+        // 5. 발급된 사용자 쿠폰 사용 및 해당 쿠폰 정보 조회
+        val coupon =
+            if (orderCriteria.usedCouponId != null) {
+                // 5-1. 사용자 쿠폰 사용 처리
+                val usedUserCoupon = userCouponService.useCoupon(orderCriteria.usedCouponId)
+                // 5-2. 쿠폰 정보 조회
+                couponService.getCouponInfo(usedUserCoupon.couponId)
+            } else {
+                null
+            }
 
         // 6. 결제 대기 상태로 변경
         orderService.changePaymentReady(order.orderId)
