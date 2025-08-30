@@ -24,7 +24,7 @@ class PaymentTest {
         assertEquals(paymentId, payment.paymentId)
         assertEquals(orderId, payment.orderId)
         assertEquals(originalAmount, payment.originalAmount)
-        assertEquals(0L, payment.getDiscountAmount())
+        assertEquals(0L, payment.discountAmount)
         assertEquals(PaymentStatus.REQUESTED, payment.getPaymentStatus())
         assertEquals(originalAmount, payment.finalAmount)
         assertTrue(payment.getCreatedAt() > 0)
@@ -43,7 +43,7 @@ class PaymentTest {
         val payment = Payment(paymentId, orderId, originalAmount, discountAmount)
 
         // then
-        assertEquals(discountAmount, payment.getDiscountAmount())
+        assertEquals(discountAmount, payment.discountAmount)
         assertEquals(45000L, payment.finalAmount)
     }
 
@@ -126,51 +126,54 @@ class PaymentTest {
     }
 
     @Test
-    @DisplayName("할인 적용")
-    fun `할인 적용`() {
+    @DisplayName("할인 금액이 적용된 결제 생성")
+    fun `할인 금액이 적용된 결제 생성`() {
         // given
-        val payment = Payment(1L, 1L, 50000L)
+        val paymentId = 1L
+        val orderId = 1L
+        val originalAmount = 50000L
         val discountAmount = 10000L
 
         // when
-        payment.addDiscountAmount(discountAmount)
+        val payment = Payment(paymentId, orderId, originalAmount, discountAmount)
 
         // then
-        assertEquals(discountAmount, payment.getDiscountAmount())
+        assertEquals(discountAmount, payment.discountAmount)
         assertEquals(40000L, payment.finalAmount)
     }
 
     @Test
-    @DisplayName("할인 적용 시 음수 할인 금액이면 예외 발생")
-    fun `할인 적용 시 음수 할인 금액이면 예외 발생`() {
+    @DisplayName("음수 할인 금액으로 결제 생성 시 예외 발생")
+    fun `음수 할인 금액으로 결제 생성 시 예외 발생`() {
         // given
-        val payment = Payment(1L, 1L, 50000L)
+        val paymentId = 1L
+        val orderId = 1L
+        val originalAmount = 50000L
         val invalidDiscountAmount = -1L
 
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                payment.addDiscountAmount(invalidDiscountAmount)
+                Payment(paymentId, orderId, originalAmount, invalidDiscountAmount)
             }
         assertTrue(exception.message!!.contains("할인 금액은 0 이상이어야 합니다"))
     }
 
     @Test
-    @DisplayName("할인 적용 후 최종 금액이 음수가 되면 예외 발생")
-    fun `할인 적용 후 최종 금액이 음수가 되면 예외 발생`() {
+    @DisplayName("할인 금액이 원본 금액을 초과하면 예외 발생")
+    fun `할인 금액이 원본 금액을 초과하면 예외 발생`() {
         // given
-        val payment = Payment(1L, 1L, 10000L)
+        val paymentId = 1L
+        val orderId = 1L
+        val originalAmount = 10000L
         val excessiveDiscountAmount = 20000L
 
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                payment.addDiscountAmount(excessiveDiscountAmount)
+                Payment(paymentId, orderId, originalAmount, excessiveDiscountAmount)
             }
-        assertTrue(
-            exception.message!!.contains("최종 결제 금액은 0 이상이어야 합니다") ||
-                exception.message!!.contains("할인 적용 후 최종 금액이 음수가 될 수 없습니다"),
-        )
+        assertTrue(exception.message!!.contains("할인 금액은 원본 금액을 초과할 수 없습니다"))
     }
 
     @Test
@@ -254,14 +257,16 @@ class PaymentTest {
     @DisplayName("경계값 테스트 - 할인 금액 0원")
     fun `경계값 테스트 - 할인 금액 0원`() {
         // given
-        val payment = Payment(1L, 1L, 50000L)
+        val paymentId = 1L
+        val orderId = 1L
+        val originalAmount = 50000L
         val discountAmount = 0L
 
         // when
-        payment.addDiscountAmount(discountAmount)
+        val payment = Payment(paymentId, orderId, originalAmount, discountAmount)
 
         // then
-        assertEquals(0L, payment.getDiscountAmount())
+        assertEquals(0L, payment.discountAmount)
         assertEquals(50000L, payment.finalAmount)
     }
 
@@ -269,14 +274,16 @@ class PaymentTest {
     @DisplayName("경계값 테스트 - 할인 금액이 원본 금액과 동일")
     fun `경계값 테스트 - 할인 금액이 원본 금액과 동일`() {
         // given
-        val payment = Payment(1L, 1L, 50000L)
+        val paymentId = 1L
+        val orderId = 1L
+        val originalAmount = 50000L
         val discountAmount = 50000L
 
         // when
-        payment.addDiscountAmount(discountAmount)
+        val payment = Payment(paymentId, orderId, originalAmount, discountAmount)
 
         // then
-        assertEquals(50000L, payment.getDiscountAmount())
+        assertEquals(50000L, payment.discountAmount)
         assertEquals(0L, payment.finalAmount)
     }
 
@@ -291,18 +298,5 @@ class PaymentTest {
         assertEquals(1L, payment.originalAmount)
     }
 
-    @Test
-    @DisplayName("할인 적용 후 재할인 적용")
-    fun `할인 적용 후 재할인 적용`() {
-        // given
-        val payment = Payment(1L, 1L, 50000L)
-        payment.addDiscountAmount(10000L)
 
-        // when
-        payment.addDiscountAmount(5000L)
-
-        // then
-        assertEquals(15000L, payment.getDiscountAmount())
-        assertEquals(35000L, payment.finalAmount)
-    }
 }

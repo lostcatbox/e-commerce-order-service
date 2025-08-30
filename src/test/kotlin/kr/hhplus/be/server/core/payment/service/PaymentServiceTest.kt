@@ -70,7 +70,7 @@ class PaymentServiceTest {
         assertEquals(paymentId, result.paymentId)
         assertEquals(orderId, result.orderId)
         assertEquals(orderAmount, result.originalAmount)
-        assertEquals(0L, result.getDiscountAmount())
+        assertEquals(0L, result.discountAmount)
         assertEquals(orderAmount, result.finalAmount)
         assertTrue(result.isSuccess())
 
@@ -120,7 +120,7 @@ class PaymentServiceTest {
         assertEquals(paymentId, result.paymentId)
         assertEquals(orderId, result.orderId)
         assertEquals(orderAmount, result.originalAmount)
-        assertEquals(discountAmount, result.getDiscountAmount())
+        assertEquals(discountAmount, result.discountAmount)
         assertEquals(finalAmount, result.finalAmount)
         assertTrue(result.isSuccess())
 
