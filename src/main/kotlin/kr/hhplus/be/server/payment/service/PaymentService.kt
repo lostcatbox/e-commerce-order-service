@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.payment.service
 
 import kr.hhplus.be.server.payment.domain.Payment
-import kr.hhplus.be.server.payment.domain.PaymentStatus
 import kr.hhplus.be.server.payment.domain.ProcessPaymentCommand
 import kr.hhplus.be.server.payment.repository.PaymentRepository
 import kr.hhplus.be.server.point.service.PointServiceInterface
@@ -28,6 +27,7 @@ class PaymentService(
 
         // 결제 금액 계산
         val originalAmount = command.order.calculateTotalAmount()
+        // 쿠폰 할인 금액 (쿠폰이 없으면 0)
         val discountAmount = command.coupon?.discountAmount ?: 0L
 
         // 결제 생성
@@ -39,11 +39,6 @@ class PaymentService(
                 originalAmount = originalAmount,
                 discountAmount = discountAmount,
             )
-
-        // 쿠폰 할인 적용
-        if (command.coupon != null) {
-            payment.applyDiscount(discountAmount)
-        }
 
         try {
             // 포인트 결제 처리

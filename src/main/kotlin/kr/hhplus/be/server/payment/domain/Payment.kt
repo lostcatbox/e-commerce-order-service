@@ -50,11 +50,12 @@ class Payment(
 
     /**
      * 할인 적용
+     * 할인 금액을 누적하여 적용
      */
-    fun applyDiscount(discountAmount: Long) {
+    fun addDiscountAmount(discountAmount: Long) {
         require(discountAmount >= 0) { "할인 금액은 0 이상이어야 합니다. 입력된 금액: $discountAmount" }
 
-        this.discountAmount = discountAmount
+        this.discountAmount += discountAmount
 
         // 최종 금액이 음수가 되지 않도록 검증
         require(calculateFinalAmount() >= 0) {
