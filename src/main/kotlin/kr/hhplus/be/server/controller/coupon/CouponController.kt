@@ -4,6 +4,8 @@ import kr.hhplus.be.server.controller.coupon.dto.CouponInfoResponse
 import kr.hhplus.be.server.controller.coupon.dto.CouponIssueRequest
 import kr.hhplus.be.server.controller.coupon.dto.UserCouponsResponse
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
+import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
+import kr.hhplus.be.server.facade.coupon.CouponFacade
 import org.springframework.web.bind.annotation.*
 
 /**
@@ -12,7 +14,9 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/coupons")
 class CouponController(
+    private val couponFacade: CouponFacade,
     private val couponService: CouponServiceInterface,
+    private val userCouponService: UserCouponServiceInterface,
 ) {
     /**
      * 쿠폰 정보 조회
@@ -36,7 +40,7 @@ class CouponController(
     fun issueCoupon(
         @RequestBody request: CouponIssueRequest,
     ): UserCouponsResponse.UserCouponInfo {
-        val userCoupon = couponService.issueCoupon(request.userId, request.couponId)
+        val userCoupon = couponFacade.issueCoupon(request.userId, request.couponId)
         return UserCouponsResponse.UserCouponInfo(
             userId = userCoupon.userId,
             couponId = userCoupon.couponId,
@@ -55,7 +59,7 @@ class CouponController(
     fun getUserCoupons(
         @PathVariable userId: Long,
     ): UserCouponsResponse {
-        val userCoupons = couponService.getUserCoupons(userId)
+        val userCoupons = userCouponService.getUserCoupons(userId)
         return UserCouponsResponse.from(userCoupons)
     }
 }
