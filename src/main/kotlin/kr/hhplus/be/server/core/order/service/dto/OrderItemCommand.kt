@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.core.order.domain
+package kr.hhplus.be.server.core.order.service.dto
 
 /**
  * 주문 상품 커맨드

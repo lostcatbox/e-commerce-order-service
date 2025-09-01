@@ -2,8 +2,8 @@ package kr.hhplus.be.server.core.payment.service
 
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.payment.domain.Payment
-import kr.hhplus.be.server.core.payment.domain.ProcessPaymentCommand
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
+import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

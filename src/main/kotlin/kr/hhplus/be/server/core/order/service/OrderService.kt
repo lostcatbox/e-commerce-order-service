@@ -1,10 +1,10 @@
 package kr.hhplus.be.server.core.order.service
 
-import kr.hhplus.be.server.core.order.domain.CreateOrderCommand
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.domain.OrderItem
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
+import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

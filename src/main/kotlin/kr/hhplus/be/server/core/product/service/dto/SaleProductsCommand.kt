@@ -1,6 +1,6 @@
-package kr.hhplus.be.server.core.product.domain
+package kr.hhplus.be.server.core.product.service.dto
 
-import kr.hhplus.be.server.core.order.domain.OrderItemCommand
+import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 
 /**
  * 상품 판매 처리 커맨드

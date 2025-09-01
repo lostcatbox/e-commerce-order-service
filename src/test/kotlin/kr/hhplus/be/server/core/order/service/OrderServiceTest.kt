@@ -1,12 +1,11 @@
 package kr.hhplus.be.server.core.order.service
 
-import kr.hhplus.be.server.core.order.domain.CreateOrderCommand
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.domain.OrderItem
-import kr.hhplus.be.server.core.order.domain.OrderItemCommand
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
-import kr.hhplus.be.server.core.order.service.OrderService
+import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
+import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 import kr.hhplus.be.server.core.product.domain.Product
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import org.junit.jupiter.api.Assertions.*

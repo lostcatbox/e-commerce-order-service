@@ -7,9 +7,9 @@ import kr.hhplus.be.server.core.order.domain.OrderItem
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.payment.domain.Payment
 import kr.hhplus.be.server.core.payment.domain.PaymentStatus
-import kr.hhplus.be.server.core.payment.domain.ProcessPaymentCommand
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
 import kr.hhplus.be.server.core.payment.service.PaymentService
+import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
