@@ -20,9 +20,4 @@ interface PaymentRepository {
      * 주문 ID로 결제 조회
      */
     fun findByOrderId(orderId: Long): Payment?
-
-    /**
-     * 다음 결제 ID 생성
-     */
-    fun generateNextPaymentId(): Long
 }

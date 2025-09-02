@@ -1,27 +1,68 @@
 package kr.hhplus.be.server.core.payment.domain
 
+import jakarta.persistence.*
+
 /**
  * 결제 도메인 모델
  */
+@Entity
+@Table(name = "payment")
 class Payment(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "payment_id")
     val paymentId: Long,
+    @Column(name = "original_amount", nullable = false)
     val originalAmount: Long,
-    val discountAmount: Long = 0L,
+    @Column(name = "discount_amount", nullable = false)
+    val discountAmount: Long,
+    @Column(name = "final_amount", nullable = false)
+    val finalAmount: Long,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     private var paymentStatus: PaymentStatus = PaymentStatus.REQUESTED,
+    @Column(name = "created_at", nullable = false)
     private val createdAt: Long = System.currentTimeMillis(),
+    @Column(name = "updated_at", nullable = false)
+    private var updatedAt: Long = System.currentTimeMillis(),
 ) {
-    init {
-        require(paymentId > 0) { "결제 ID는 0보다 커야 합니다. 입력된 ID: $paymentId" }
-        require(originalAmount >= 0) { "원본 금액은 0 이상이어야 합니다. 입력된 금액: $originalAmount" }
-        require(discountAmount >= 0) { "할인 금액은 0 이상이어야 합니다. 입력된 금액: $discountAmount" }
-        require(originalAmount >= discountAmount) {
-            "할인 금액은 원본 금액을 초과할 수 없습니다. 원본 금액: $originalAmount, 할인 금액: $discountAmount"
+    companion object {
+        /**
+         * 결제 생성 팩토리 메서드
+         */
+        fun createPayment(
+            originalAmount: Long,
+            discountAmount: Long = 0L,
+        ): Payment {
+            require(originalAmount >= 0) { "원본 금액은 0 이상이어야 합니다. 입력된 금액: $originalAmount" }
+            require(discountAmount >= 0) { "할인 금액은 0 이상이어야 합니다. 입력된 금액: $discountAmount" }
+            require(originalAmount >= discountAmount) {
+                "할인 금액은 원본 금액을 초과할 수 없습니다. 원본 금액: $originalAmount, 할인 금액: $discountAmount"
+            }
+
+            return Payment(
+                paymentId = 0L,
+                originalAmount = originalAmount,
+                discountAmount = discountAmount,
+                finalAmount = originalAmount - discountAmount,
+            )
         }
     }
 
-    // 최종 결제 금액 조회
-    val finalAmount: Long
-        get() = calculateFinalAmount()
+    init {
+        require(originalAmount >= 0) { "원본 금액은 0 이상이어야 합니다. 입력된 금액: $originalAmount" }
+        require(discountAmount >= 0) { "할인 금액은 0 이상이어야 합니다. 입력된 금액: $discountAmount" }
+        require(finalAmount >= 0) { "최종 금액은 0 이상이어야 합니다. 입력된 금액: $finalAmount" }
+        require(originalAmount >= discountAmount) {
+            "할인 금액은 원본 금액을 초과할 수 없습니다. 원본 금액: $originalAmount, 할인 금액: $discountAmount"
+        }
+        require(originalAmount >= finalAmount) {
+            "최종 금액은 원본 금액을 초과할 수 없습니다. 원본 금액: $originalAmount, 최종 금액: $finalAmount"
+        }
+        require(finalAmount == originalAmount - discountAmount) {
+            "최종 금액이 올바르지 않습니다. 예상: ${originalAmount - discountAmount}, 실제: $finalAmount"
+        }
+    }
 
     /**
      * 현재 결제 상태 조회
@@ -34,11 +75,6 @@ class Payment(
     fun getCreatedAt(): Long = createdAt
 
     /**
-     * 최종 결제 금액 계산
-     */
-    private fun calculateFinalAmount(): Long = originalAmount - discountAmount
-
-    /**
      * 결제 상태 변경 (내부 사용)
      */
     private fun changeStatus(newStatus: PaymentStatus) {
@@ -46,6 +82,7 @@ class Payment(
             "결제 상태를 ${paymentStatus.description}에서 ${newStatus.description}로 변경할 수 없습니다."
         }
         this.paymentStatus = newStatus
+        this.updatedAt = System.currentTimeMillis()
     }
 
     /**
