@@ -25,10 +25,4 @@ interface ProductRepository {
      * @return 인기 상품 목록 (판매량 기준 내림차순)
      */
     fun findPopularProducts(): List<Product>
-
-    /**
-     * 모든 상품 조회
-     * @return 전체 상품 목록
-     */
-    fun findAll(): List<Product>
 }

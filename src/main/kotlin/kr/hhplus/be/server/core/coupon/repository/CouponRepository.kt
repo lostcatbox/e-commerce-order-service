@@ -19,10 +19,4 @@ interface CouponRepository {
      * @return 저장된 Coupon
      */
     fun save(coupon: Coupon): Coupon
-
-    /**
-     * 모든 쿠폰 조회
-     * @return 쿠폰 목록
-     */
-    fun findAll(): List<Coupon>
 }
