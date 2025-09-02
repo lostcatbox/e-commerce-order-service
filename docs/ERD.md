@@ -17,6 +17,7 @@ erDiagram
 
     PRODUCT {
         Long product_id PK "상품 식별자"
+        String name "상품 이름"
         String description "상품 설명"
         Long price "판매 금액"
         Integer stock "재고량(0~1,000)"
