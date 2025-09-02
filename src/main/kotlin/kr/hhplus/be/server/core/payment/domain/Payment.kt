@@ -5,7 +5,6 @@ package kr.hhplus.be.server.core.payment.domain
  */
 class Payment(
     val paymentId: Long,
-    val orderId: Long,
     val originalAmount: Long,
     val discountAmount: Long = 0L,
     private var paymentStatus: PaymentStatus = PaymentStatus.REQUESTED,
@@ -13,7 +12,6 @@ class Payment(
 ) {
     init {
         require(paymentId > 0) { "결제 ID는 0보다 커야 합니다. 입력된 ID: $paymentId" }
-        require(orderId > 0) { "주문 ID는 0보다 커야 합니다. 입력된 ID: $orderId" }
         require(originalAmount >= 0) { "원본 금액은 0 이상이어야 합니다. 입력된 금액: $originalAmount" }
         require(discountAmount >= 0) { "할인 금액은 0 이상이어야 합니다. 입력된 금액: $discountAmount" }
         require(originalAmount >= discountAmount) {
@@ -30,8 +28,6 @@ class Payment(
      */
     fun getPaymentStatus(): PaymentStatus = paymentStatus
 
-
-
     /**
      * 생성 시간 조회
      */
@@ -41,8 +37,6 @@ class Payment(
      * 최종 결제 금액 계산
      */
     private fun calculateFinalAmount(): Long = originalAmount - discountAmount
-
-
 
     /**
      * 결제 상태 변경 (내부 사용)

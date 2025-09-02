@@ -36,7 +36,6 @@ class PaymentService(
         val payment =
             Payment(
                 paymentId = paymentId,
-                orderId = command.order.orderId,
                 originalAmount = originalAmount,
                 discountAmount = discountAmount,
             )
