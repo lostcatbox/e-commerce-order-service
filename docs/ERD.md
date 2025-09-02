@@ -46,6 +46,7 @@ erDiagram
     PAYMENT {
         Long payment_id PK "결제 식별자"
         Long original_amount "할인 전 결제 금액"
+        Long discount_amount "할인 금액"
         Long final_amount "최종 결제 금액"
         String status "결제 상태(REQUESTED/SUCCESS/FAILED)"
         DateTime created_at "생성일시"

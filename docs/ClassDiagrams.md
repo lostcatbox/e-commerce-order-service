@@ -70,6 +70,7 @@ classDiagram
     class Payment {
         -Long paymentId
         -Long originalAmount
+        -Long discountAmount
         -Long finalAmount
         -PaymentStatus status
         +createPayment(coupon: Coupon, originalAmount: Long) Payment
