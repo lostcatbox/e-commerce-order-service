@@ -1,5 +1,7 @@
 package kr.hhplus.be.server.core.user.service
 
+import kr.hhplus.be.server.core.user.domain.User
+import kr.hhplus.be.server.core.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -8,17 +10,14 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 @Transactional(readOnly = true)
-class UserService : UserServiceInterface {
+class UserService(
+    private val userRepository: UserRepository,
+) : UserServiceInterface {
     /**
      * 활성 사용자 확인
-     *
-     * 현재는 단순히 사용자 ID가 0보다 큰지 검증하는 로직만 포함
      */
     override fun checkActiveUser(userId: Long) {
-        validateUserId(userId)
-    }
-
-    private fun validateUserId(userId: Long) {
-        require(userId > 0) { "사용자 ID는 0보다 커야 합니다. 입력된 ID: $userId" }
+        userRepository.findByUserId(userId)
+            ?: throw IllegalArgumentException("존재하지 않는 사용자입니다. 사용자 ID: $userId")
     }
 }
