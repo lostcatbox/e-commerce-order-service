@@ -44,6 +44,8 @@ classDiagram
     }
 
     class OrderItem {
+        -Long orderItemId
+        -Long orderId
         -Long productId
         -Integer quantity
         +createOrderItem(productId: Long, quantity: Integer) OrderItem
@@ -118,6 +120,7 @@ classDiagram
 ```mermaid
 classDiagram
     class UserCoupon {
+        -Long userCouponId
         -Long userId
         -Long couponId
         -UserCouponStatus status

@@ -36,8 +36,9 @@ erDiagram
     }
 
     ORDER_ITEM {
-        Long order_id PK,FK "주문 식별자"
-        Long product_id PK,FK "상품 식별자"
+        Long order_item_id PK "주문 아이템 식별자"
+        Long order_id FK "주문 식별자"
+        Long product_id FK "상품 식별자"
         Integer quantity "주문한 상품량"
         DateTime created_at "생성일시"
     }
@@ -62,8 +63,9 @@ erDiagram
     }
 
     USER_COUPON {
-        Long user_id PK,FK "사용자 식별자"
-        Long coupon_id PK,FK "선착순 쿠폰 식별자"
+        Long user_coupon_id PK "사용자 쿠폰 식별자"
+        Long user_id FK "사용자 식별자"
+        Long coupon_id FK "선착순 쿠폰 식별자"
         String status "쿠폰 상태(ISSUED/USED)"
         DateTime issued_at "발급일시"
         DateTime used_at "사용일시(nullable)"
