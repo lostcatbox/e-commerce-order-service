@@ -44,7 +44,6 @@ classDiagram
     }
 
     class OrderItem {
-        -Long orderItemId
         -Long orderId
         -Long productId
         -Integer quantity

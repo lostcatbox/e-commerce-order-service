@@ -36,8 +36,7 @@ erDiagram
     }
 
     ORDER_ITEM {
-        Long order_item_id PK "주문 아이템 식별자"
-        Long order_id FK "주문 식별자"
+        Long order_id PK, FK "주문 식별자"
         Long product_id FK "상품 식별자"
         Integer quantity "주문한 상품량"
         DateTime created_at "생성일시"
