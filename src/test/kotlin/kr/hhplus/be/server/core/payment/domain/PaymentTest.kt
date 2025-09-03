@@ -48,22 +48,6 @@ class PaymentTest {
     }
 
     @Test
-    @DisplayName("결제 ID가 0보다 작거나 같으면 예외 발생")
-    fun `결제 ID가 0보다 작거나 같으면 예외 발생`() {
-        // given
-        val invalidPaymentId = 0L
-
-        val originalAmount = 50000L
-
-        // when & then
-        val exception =
-            assertThrows<IllegalArgumentException> {
-                Payment(invalidPaymentId, originalAmount)
-            }
-        assertTrue(exception.message!!.contains("결제 ID는 0보다 커야 합니다"))
-    }
-
-    @Test
     @DisplayName("원본 금액이 음수면 예외 발생")
     fun `원본 금액이 음수면 예외 발생`() {
         // given

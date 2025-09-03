@@ -11,7 +11,7 @@ data class ProcessPaymentCommand(
     val coupon: Coupon?,
 ) {
     init {
-        require(order.orderId > 0) { "주문 ID는 0보다 커야 합니다." }
+        require(order.orderId >= 0) { "주문 ID는 0 이상이어야 합니다." }
         require(order.calculateTotalAmount() > 0) { "주문 총 금액은 0보다 커야 합니다." }
     }
 }

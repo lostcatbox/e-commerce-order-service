@@ -44,36 +44,26 @@ class PaymentServiceTest {
     fun `쿠폰 없이 결제 처리 성공`() {
         // given
         val userId = 1L
-        val orderId = 100L
-        val paymentId = 200L
         val orderAmount = 50000L
 
-        val order = createPaymentReadyOrder(orderId, userId, orderAmount)
+        val order = createPaymentReadyOrder(userId, orderAmount)
         val command = ProcessPaymentCommand(order = order, coupon = null)
 
-        val expectedPayment =
-            Payment(
-                paymentId = paymentId,
-                originalAmount = orderAmount,
-                discountAmount = 0L,
-                paymentStatus = PaymentStatus.SUCCESS,
-            )
+        val expectedPayment = Payment.createPayment(orderAmount, 0L)
+        expectedPayment.success() // 성공 상태로 변경
 
-        whenever(paymentRepository.generateNextPaymentId()).thenReturn(paymentId)
         whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
 
         // when
         val result = paymentService.processPayment(command)
 
         // then
-        assertEquals(paymentId, result.paymentId)
         assertEquals(orderAmount, result.originalAmount)
         assertEquals(0L, result.discountAmount)
         assertEquals(orderAmount, result.finalAmount)
         assertTrue(result.isSuccess())
 
         verify(pointService).usePoint(userId, orderAmount)
-        verify(paymentRepository).generateNextPaymentId()
         verify(paymentRepository).save(any<Payment>())
     }
 
@@ -83,12 +73,12 @@ class PaymentServiceTest {
         // given
         val userId = 1L
         val orderId = 100L
-        val paymentId = 200L
+
         val orderAmount = 50000L
         val discountAmount = 10000L
         val finalAmount = orderAmount - discountAmount
 
-        val order = createPaymentReadyOrder(orderId, userId, orderAmount)
+        val order = createPaymentReadyOrder(userId, orderAmount)
         val coupon =
             Coupon(
                 couponId = 500L,
@@ -99,29 +89,21 @@ class PaymentServiceTest {
             )
         val command = ProcessPaymentCommand(order = order, coupon = coupon)
 
-        val expectedPayment =
-            Payment(
-                paymentId = paymentId,
-                originalAmount = orderAmount,
-                discountAmount = discountAmount,
-                paymentStatus = PaymentStatus.SUCCESS,
-            )
+        val expectedPayment = Payment.createPayment(orderAmount, discountAmount)
+        expectedPayment.success() // 성공 상태로 변경
 
-        whenever(paymentRepository.generateNextPaymentId()).thenReturn(paymentId)
         whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
 
         // when
         val result = paymentService.processPayment(command)
 
         // then
-        assertEquals(paymentId, result.paymentId)
         assertEquals(orderAmount, result.originalAmount)
         assertEquals(discountAmount, result.discountAmount)
         assertEquals(finalAmount, result.finalAmount)
         assertTrue(result.isSuccess())
 
         verify(pointService).usePoint(userId, finalAmount)
-        verify(paymentRepository).generateNextPaymentId()
         verify(paymentRepository).save(any<Payment>())
     }
 
@@ -131,20 +113,15 @@ class PaymentServiceTest {
         // given
         val userId = 1L
         val orderId = 100L
-        val paymentId = 200L
+
         val orderAmount = 50000L
 
-        val order = createPaymentReadyOrder(orderId, userId, orderAmount)
+        val order = createPaymentReadyOrder(userId, orderAmount)
         val command = ProcessPaymentCommand(order = order, coupon = null)
 
-        val failedPayment =
-            Payment(
-                paymentId = paymentId,
-                originalAmount = orderAmount,
-                paymentStatus = PaymentStatus.FAILED,
-            )
+        val failedPayment = Payment.createPayment(orderAmount, 0L)
+        failedPayment.fail() // 실패 상태로 변경
 
-        whenever(paymentRepository.generateNextPaymentId()).thenReturn(paymentId)
         whenever(pointService.usePoint(userId, orderAmount)).thenThrow(RuntimeException("포인트 부족"))
         whenever(paymentRepository.save(any<Payment>())).thenReturn(failedPayment)
 
@@ -156,7 +133,6 @@ class PaymentServiceTest {
         assertEquals("포인트 부족", exception.message)
 
         verify(pointService).usePoint(userId, orderAmount)
-        verify(paymentRepository).generateNextPaymentId()
         verify(paymentRepository, atLeastOnce()).save(any<Payment>()) // 실패 처리로 인해 최소 1번 호출
     }
 
@@ -164,13 +140,9 @@ class PaymentServiceTest {
     @DisplayName("결제 대기 상태가 아닌 주문으로 결제 시 예외 발생")
     fun `결제 대기 상태가 아닌 주문으로 결제 시 예외 발생`() {
         // given
-        val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(1L, 1, 10000L)),
-                orderStatus = OrderStatus.REQUESTED, // 잘못된 상태
-            )
+        val order = Order(userId = 1L)
+        order.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+        // orderStatus는 기본값인 OrderStatus.REQUESTED (결제 대기가 아닌 잘못된 상태)
         val command = ProcessPaymentCommand(order = order, coupon = null)
 
         // when & then
@@ -180,7 +152,6 @@ class PaymentServiceTest {
             }
         assertTrue(exception.message!!.contains("결제 가능한 상태의 주문이 아닙니다"))
 
-        verify(paymentRepository, never()).generateNextPaymentId()
         verify(paymentRepository, never()).save(any())
         verify(pointService, never()).usePoint(any(), any())
     }
@@ -256,20 +227,15 @@ class PaymentServiceTest {
         // given
         val userId = 1L
         val orderId = 100L
-        val paymentId = 200L
+
         val minAmount = 1L
 
-        val order = createPaymentReadyOrder(orderId, userId, minAmount)
+        val order = createPaymentReadyOrder(userId, minAmount)
         val command = ProcessPaymentCommand(order = order, coupon = null)
 
-        val expectedPayment =
-            Payment(
-                paymentId = paymentId,
-                originalAmount = minAmount,
-                paymentStatus = PaymentStatus.SUCCESS,
-            )
+        val expectedPayment = Payment.createPayment(minAmount, 0L)
+        expectedPayment.success() // 성공 상태로 변경
 
-        whenever(paymentRepository.generateNextPaymentId()).thenReturn(paymentId)
         whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
 
         // when
@@ -284,17 +250,12 @@ class PaymentServiceTest {
      * 테스트용 결제 대기 상태 주문 생성
      */
     private fun createPaymentReadyOrder(
-        orderId: Long,
         userId: Long,
         totalAmount: Long,
     ): Order {
         val unitPrice = if (totalAmount > 0) totalAmount else 1L
-        val order =
-            Order(
-                orderId = orderId,
-                userId = userId,
-                orderItems = listOf(OrderItem(1L, 1, unitPrice)),
-            )
+        val order = Order(userId = userId)
+        order.addOrderItem(productId = 1L, quantity = 1, unitPrice = unitPrice)
         order.prepareProducts()
         order.readyForPayment()
         return order

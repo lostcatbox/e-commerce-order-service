@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.core.payment.domain
 
 import jakarta.persistence.*
+import kr.hhplus.be.server.core.order.domain.OrderItem
 
 /**
  * 결제 도메인 모델
@@ -11,21 +12,35 @@ class Payment(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_id")
-    val paymentId: Long,
+    val paymentId: Long = 0L,
     @Column(name = "original_amount", nullable = false)
     val originalAmount: Long,
     @Column(name = "discount_amount", nullable = false)
-    val discountAmount: Long,
+    val discountAmount: Long = 0L,
+) {
     @Column(name = "final_amount", nullable = false)
-    val finalAmount: Long,
+    private val _finalAmount: Long = calculateFinalAmount()
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private var paymentStatus: PaymentStatus = PaymentStatus.REQUESTED,
+    private var paymentStatus: PaymentStatus = PaymentStatus.REQUESTED
+
     @Column(name = "created_at", nullable = false)
-    private val createdAt: Long = System.currentTimeMillis(),
+    private val createdAt: Long = System.currentTimeMillis()
+
     @Column(name = "updated_at", nullable = false)
-    private var updatedAt: Long = System.currentTimeMillis(),
-) {
+    private var updatedAt: Long = System.currentTimeMillis()
+
+    /**
+     * 최종 결제 금액 조회 (읽기 전용)
+     */
+    val finalAmount: Long get() = _finalAmount
+
+    /**
+     * 최종 결제 금액 계산
+     */
+    private fun calculateFinalAmount(): Long = originalAmount - discountAmount
+
     companion object {
         /**
          * 결제 생성 팩토리 메서드
@@ -41,10 +56,8 @@ class Payment(
             }
 
             return Payment(
-                paymentId = 0L,
                 originalAmount = originalAmount,
                 discountAmount = discountAmount,
-                finalAmount = originalAmount - discountAmount,
             )
         }
     }
@@ -52,16 +65,10 @@ class Payment(
     init {
         require(originalAmount >= 0) { "원본 금액은 0 이상이어야 합니다. 입력된 금액: $originalAmount" }
         require(discountAmount >= 0) { "할인 금액은 0 이상이어야 합니다. 입력된 금액: $discountAmount" }
-        require(finalAmount >= 0) { "최종 금액은 0 이상이어야 합니다. 입력된 금액: $finalAmount" }
         require(originalAmount >= discountAmount) {
             "할인 금액은 원본 금액을 초과할 수 없습니다. 원본 금액: $originalAmount, 할인 금액: $discountAmount"
         }
-        require(originalAmount >= finalAmount) {
-            "최종 금액은 원본 금액을 초과할 수 없습니다. 원본 금액: $originalAmount, 최종 금액: $finalAmount"
-        }
-        require(finalAmount == originalAmount - discountAmount) {
-            "최종 금액이 올바르지 않습니다. 예상: ${originalAmount - discountAmount}, 실제: $finalAmount"
-        }
+        require(_finalAmount >= 0) { "최종 금액은 0 이상이어야 합니다. 입력된 금액: $_finalAmount" }
     }
 
     /**
