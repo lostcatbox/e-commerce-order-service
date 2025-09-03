@@ -11,16 +11,16 @@ class UserPoint(
     @Id
     @Column(name = "user_id")
     val userId: Long,
-
+) {
     @Column(name = "balance", nullable = false)
-    private var balance: Long,
+    private var balance: Long = 0L
 
     @Column(name = "created_at", nullable = false)
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = System.currentTimeMillis()
 
     @Column(name = "updated_at", nullable = false)
-    private var lastUpdatedAt: Long = System.currentTimeMillis(),
-) {
+    private var lastUpdatedAt: Long = System.currentTimeMillis()
+
     companion object {
         const val MIN_BALANCE = 0L // 최소 잔액
         const val MAX_BALANCE = 2_000_000L // 최대 잔액

@@ -21,7 +21,7 @@ class PointService(
         validateUserId(userId)
 
         return userPointRepository.findByUserId(userId)
-            ?: UserPoint(userId = userId, balance = 0L) // 신규 사용자인 경우 0 잔액으로 반환
+            ?: UserPoint(userId = userId) // 신규 사용자인 경우 0 잔액으로 반환
     }
 
     /**
@@ -37,7 +37,7 @@ class PointService(
         // 기존 포인트 조회 (없으면 0으로 초기화)
         val currentUserPoint =
             userPointRepository.findByUserId(userId)
-                ?: UserPoint(userId = userId, balance = 0L)
+                ?: UserPoint(userId = userId)
 
         // 도메인 로직을 통한 포인트 충전
         currentUserPoint.charge(amount)

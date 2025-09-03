@@ -35,12 +35,8 @@ class PointControllerTest {
     fun getPointBalance() {
         // given
         val userId = 1L
-        val userPoint =
-            UserPoint(
-                userId = userId,
-                balance = 50000L,
-                lastUpdatedAt = System.currentTimeMillis(),
-            )
+        val userPoint = UserPoint(userId)
+        userPoint.charge(50000L) // 초기 잔액 설정
 
         given(pointService.getPointBalance(userId)).willReturn(userPoint)
 
@@ -63,18 +59,11 @@ class PointControllerTest {
         // given
         val userId = 1L
         val chargeAmount = 10000L
-        val previousUserPoint =
-            UserPoint(
-                userId = userId,
-                balance = 50000L,
-                lastUpdatedAt = System.currentTimeMillis(),
-            )
-        val chargedUserPoint =
-            UserPoint(
-                userId = userId,
-                balance = 60000L,
-                lastUpdatedAt = System.currentTimeMillis(),
-            )
+        val previousUserPoint = UserPoint(userId)
+        previousUserPoint.charge(50000L) // 초기 잔액 설정
+        
+        val chargedUserPoint = UserPoint(userId)
+        chargedUserPoint.charge(60000L) // 충전 후 잔액 설정
         val request = mapOf("amount" to chargeAmount)
 
         given(pointService.getPointBalance(userId)).willReturn(previousUserPoint)

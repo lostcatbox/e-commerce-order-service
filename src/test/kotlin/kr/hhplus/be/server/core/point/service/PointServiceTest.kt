@@ -37,7 +37,8 @@ class PointServiceTest {
     fun `기존 사용자 포인트 잔액 조회 성공`() {
         // given
         val userId = 1L
-        val expectedUserPoint = UserPoint(userId, 50000L)
+        val expectedUserPoint = UserPoint(userId)
+        expectedUserPoint.charge(50000L)
         whenever(userPointRepository.findByUserId(userId)).thenReturn(expectedUserPoint)
 
         // when
@@ -85,8 +86,10 @@ class PointServiceTest {
         // given
         val userId = 1L
         val chargeAmount = 30000L
-        val existingUserPoint = UserPoint(userId, 50000L)
-        val expectedChargedUserPoint = UserPoint(userId, 80000L)
+        val existingUserPoint = UserPoint(userId)
+        existingUserPoint.charge(50000L)
+        val expectedChargedUserPoint = UserPoint(userId)
+        expectedChargedUserPoint.charge(80000L)
 
         whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
@@ -108,7 +111,8 @@ class PointServiceTest {
         // given
         val userId = 1L
         val chargeAmount = 30000L
-        val expectedChargedUserPoint = UserPoint(userId, 30000L)
+        val expectedChargedUserPoint = UserPoint(userId)
+        expectedChargedUserPoint.charge(30000L)
 
         whenever(userPointRepository.findByUserId(userId)).thenReturn(null)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
@@ -147,7 +151,8 @@ class PointServiceTest {
         // given
         val userId = 1L
         val invalidChargeAmount = 0L
-        val existingUserPoint = UserPoint(userId, 50000L)
+        val existingUserPoint = UserPoint(userId)
+        existingUserPoint.charge(50000L)
 
         whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
 
@@ -167,7 +172,8 @@ class PointServiceTest {
         // given
         val userId = 1L
         val chargeAmount = 200000L
-        val existingUserPoint = UserPoint(userId, 1900000L)
+        val existingUserPoint = UserPoint(userId)
+        existingUserPoint.charge(1900000L)
 
         whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
 
@@ -187,8 +193,9 @@ class PointServiceTest {
         // given
         val userId = 1L
         val maxChargeAmount = UserPoint.MAX_CHARGE_AMOUNT
-        val existingUserPoint = UserPoint(userId, 0L)
-        val expectedChargedUserPoint = UserPoint(userId, maxChargeAmount)
+        val existingUserPoint = UserPoint(userId)
+        val expectedChargedUserPoint = UserPoint(userId)
+        expectedChargedUserPoint.charge(maxChargeAmount)
 
         whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
@@ -207,8 +214,9 @@ class PointServiceTest {
         // given
         val userId = 1L
         val minChargeAmount = UserPoint.MIN_CHARGE_AMOUNT
-        val existingUserPoint = UserPoint(userId, 0L)
-        val expectedChargedUserPoint = UserPoint(userId, minChargeAmount)
+        val existingUserPoint = UserPoint(userId)
+        val expectedChargedUserPoint = UserPoint(userId)
+        expectedChargedUserPoint.charge(minChargeAmount)
 
         whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
