@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.core.order.service
 
 import kr.hhplus.be.server.core.order.domain.Order
+import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
 import kr.hhplus.be.server.core.order.service.dto.*
 import kr.hhplus.be.server.core.product.repository.ProductRepository
@@ -22,26 +23,28 @@ class OrderService(
     @Transactional
     override fun createOrder(command: CreateOrderCommand): Order {
         // 주문 생성 (Aggregate Root)
-        val order = Order(
-            userId = command.userId,
-            usedCouponId = command.usedCouponId
-        )
+        val order =
+            Order(
+                userId = command.userId,
+                usedCouponId = command.usedCouponId,
+            )
 
         // 상품 정보 조회 및 주문 상품 추가 (Order를 통해서만 추가)
         command.orderItems.forEach { orderItemCommand ->
-            val product = productRepository.findByProductId(orderItemCommand.productId)
-                ?: throw IllegalArgumentException("존재하지 않는 상품입니다. 상품 ID: ${orderItemCommand.productId}")
+            val product =
+                productRepository.findByProductId(orderItemCommand.productId)
+                    ?: throw IllegalArgumentException("존재하지 않는 상품입니다. 상품 ID: ${orderItemCommand.productId}")
 
             // Order Aggregate Root를 통해 OrderItem 추가
             order.addOrderItem(
                 productId = orderItemCommand.productId,
                 quantity = orderItemCommand.quantity,
-                unitPrice = product.price
+                unitPrice = product.price,
             )
         }
 
         // 주문이 비어있는지 검증
-        require(order.isNotEmpty()) { "주문 상품은 1개 이상이어야 합니다." }
+        order.validNotEmptyOrderItems()
 
         return orderRepository.save(order)
     }

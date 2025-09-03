@@ -55,34 +55,24 @@ class OrderServiceTest {
         val product1 = Product(1L, "상품1", "설명1", 10000L, 100)
         val product2 = Product(2L, "상품2", "설명2", 20000L, 50)
 
-        val expectedOrder =
-            Order(
-                orderId = orderId,
-                userId = userId,
-                orderItems =
-                    listOf(
-                        OrderItem(productId = 1L, quantity = 2, unitPrice = 10000L),
-                        OrderItem(productId = 2L, quantity = 1, unitPrice = 20000L),
-                    ),
-            )
+        val expectedOrder = Order(userId = userId)
+        expectedOrder.addOrderItem(productId = 1L, quantity = 2, unitPrice = 10000L)
+        expectedOrder.addOrderItem(productId = 2L, quantity = 1, unitPrice = 20000L)
 
         whenever(productRepository.findByProductId(1L)).thenReturn(product1)
         whenever(productRepository.findByProductId(2L)).thenReturn(product2)
-        whenever(orderRepository.generateNextOrderId()).thenReturn(orderId)
         whenever(orderRepository.save(any<Order>())).thenReturn(expectedOrder)
 
         // when
         val result = orderService.createOrder(command)
 
         // then
-        assertEquals(orderId, result.orderId)
         assertEquals(userId, result.userId)
         assertEquals(2, result.orderItems.size)
         assertEquals(OrderStatus.REQUESTED, result.getOrderStatus())
 
         verify(productRepository).findByProductId(1L)
         verify(productRepository).findByProductId(2L)
-        verify(orderRepository).generateNextOrderId()
         verify(orderRepository).save(any<Order>())
     }
 
@@ -101,16 +91,11 @@ class OrderServiceTest {
             )
 
         val product = Product(1L, "상품1", "설명1", 10000L, 100)
-        val expectedOrder =
-            Order(
-                orderId = orderId,
-                userId = userId,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-                usedCouponId = usedCouponId,
-            )
+        val expectedOrder = Order(userId = userId, usedCouponId = usedCouponId)
+        expectedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
 
         whenever(productRepository.findByProductId(1L)).thenReturn(product)
-        whenever(orderRepository.generateNextOrderId()).thenReturn(orderId)
+
         whenever(orderRepository.save(any<Order>())).thenReturn(expectedOrder)
 
         // when
@@ -150,20 +135,12 @@ class OrderServiceTest {
     fun `주문 상태를 상품 준비 완료로 변경 성공`() {
         // given
         val orderId = 1L
-        val existingOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-                orderStatus = OrderStatus.REQUESTED,
-            )
-        val updatedOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-                orderStatus = OrderStatus.PRODUCT_READY,
-            )
+        val existingOrder = Order(userId = 1L)
+        existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+
+        val updatedOrder = Order(userId = 1L)
+        updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+        updatedOrder.prepareProducts()
 
         whenever(orderRepository.findByOrderId(orderId)).thenReturn(existingOrder)
         whenever(orderRepository.save(any<Order>())).thenReturn(updatedOrder)
@@ -182,20 +159,12 @@ class OrderServiceTest {
     fun `주문 상태를 결제 대기로 변경 성공`() {
         // given
         val orderId = 1L
-        val existingOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val existingOrder = Order(userId = 1L)
+        existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         existingOrder.prepareProducts() // PRODUCT_READY로 설정
 
-        val updatedOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val updatedOrder = Order(userId = 1L)
+        updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         updatedOrder.prepareProducts()
         updatedOrder.readyForPayment()
 
@@ -217,21 +186,13 @@ class OrderServiceTest {
         // given
         val orderId = 1L
         val paymentId = 200L
-        val existingOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val existingOrder = Order(userId = 1L)
+        existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         existingOrder.prepareProducts()
         existingOrder.readyForPayment() // PAYMENT_READY로 설정
 
-        val updatedOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val updatedOrder = Order(userId = 1L)
+        updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         updatedOrder.prepareProducts()
         updatedOrder.readyForPayment()
         updatedOrder.paid(paymentId)
@@ -253,22 +214,14 @@ class OrderServiceTest {
     fun `주문 상태를 완료로 변경 성공`() {
         // given
         val orderId = 1L
-        val existingOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val existingOrder = Order(userId = 1L)
+        existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         existingOrder.prepareProducts()
         existingOrder.readyForPayment()
         existingOrder.paid(200L) // PAYMENT_COMPLETED로 설정
 
-        val updatedOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val updatedOrder = Order(userId = 1L)
+        updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         updatedOrder.prepareProducts()
         updatedOrder.readyForPayment()
         updatedOrder.paid(200L)
@@ -292,20 +245,12 @@ class OrderServiceTest {
     fun `주문 상태를 실패로 변경 성공`() {
         // given
         val orderId = 1L
-        val existingOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val existingOrder = Order(userId = 1L)
+        existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
 
-        val updatedOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-                orderStatus = OrderStatus.FAILED,
-            )
+        val updatedOrder = Order(userId = 1L)
+        updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+        updatedOrder.fail()
 
         whenever(orderRepository.findByOrderId(orderId)).thenReturn(existingOrder)
         whenever(orderRepository.save(any<Order>())).thenReturn(updatedOrder)
@@ -325,12 +270,8 @@ class OrderServiceTest {
     fun `주문 조회 성공`() {
         // given
         val orderId = 1L
-        val expectedOrder =
-            Order(
-                orderId = orderId,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+        val expectedOrder = Order(userId = 1L)
+        expectedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
 
         whenever(orderRepository.findByOrderId(orderId)).thenReturn(expectedOrder)
 
@@ -365,11 +306,11 @@ class OrderServiceTest {
     fun `사용자별 주문 목록 조회 성공`() {
         // given
         val userId = 1L
-        val expectedOrders =
-            listOf(
-                Order(1L, userId, listOf(OrderItem(1L, 1, 10000L))),
-                Order(2L, userId, listOf(OrderItem(2L, 2, 20000L))),
-            )
+        val order1 = Order(userId = userId)
+        order1.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+        val order2 = Order(userId = userId)
+        order2.addOrderItem(productId = 2L, quantity = 2, unitPrice = 20000L)
+        val expectedOrders = listOf(order1, order2)
 
         whenever(orderRepository.findByUserId(userId)).thenReturn(expectedOrders)
 

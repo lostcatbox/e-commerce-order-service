@@ -15,24 +15,35 @@ class Order(
     val orderId: Long = 0L,
     @Column(name = "user_id", nullable = false)
     val userId: Long,
+    @Column(name = "used_coupon_id")
+    val usedCouponId: Long? = null,
+) {
+    /**
+     * 주문 상품 목록 (외부에서 직접 설정 불가)
+     */
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
         name = "order_items",
         joinColumns = [JoinColumn(name = "order_id")],
     )
-    private val _orderItems: MutableList<OrderItem> = mutableListOf(),
+    private val _orderItems: MutableList<OrderItem> = mutableListOf()
+
+    /**
+     * 주문 상태 (비즈니스 로직을 통해서만 변경 가능)
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private var orderStatus: OrderStatus = OrderStatus.REQUESTED,
-    @Column(name = "used_coupon_id")
-    val usedCouponId: Long? = null,
+    private var orderStatus: OrderStatus = OrderStatus.REQUESTED
+
     @Column(name = "payment_id")
-    private var paymentId: Long? = null,
+    private var paymentId: Long? = null
+
     @Column(name = "created_at", nullable = false)
-    private val createdAt: Long = System.currentTimeMillis(),
+    private val createdAt: Long = System.currentTimeMillis()
+
     @Column(name = "updated_at", nullable = false)
-    private var updatedAt: Long = System.currentTimeMillis(),
-) {
+    private var updatedAt: Long = System.currentTimeMillis()
+
     init {
         require(userId > 0) { "사용자 ID는 0보다 커야 합니다. 입력된 ID: $userId" }
     }
@@ -51,6 +62,11 @@ class Order(
      * 생성 시간 조회
      */
     fun getCreatedAt(): Long = createdAt
+
+    /**
+     * 수정 시간 조회
+     */
+    fun getUpdatedAt(): Long = updatedAt
 
     /**
      * OrderItem 목록 조회 (읽기 전용)
@@ -140,7 +156,11 @@ class Order(
     /**
      * 주문 상품이 있는지 확인
      */
-    fun isNotEmpty(): Boolean = _orderItems.isNotEmpty()
+    fun validNotEmptyOrderItems() {
+        if (_orderItems.isEmpty()) {
+            throw IllegalStateException("주문 상품은 1개 이상이어야 합니다.")
+        }
+    }
 
     /**
      * 업데이트 시간 갱신
@@ -151,12 +171,17 @@ class Order(
 
     /**
      * 상태 변경 시 업데이트 시간 갱신
+     * 상태 전환이 유효한지 검증
      */
     private fun changeStatus(newStatus: OrderStatus) {
+        validNotEmptyOrderItems()
+
         require(orderStatus.canChangeTo(newStatus)) {
             "주문 상태를 ${orderStatus.description}에서 ${newStatus.description}로 변경할 수 없습니다."
         }
         this.orderStatus = newStatus
         updateTimestamp()
     }
+
+    fun getOrderItemCount(): Int = _orderItems.size
 }

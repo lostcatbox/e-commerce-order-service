@@ -40,20 +40,22 @@ class OrderControllerTest {
         val orderId = 100L
         val paymentId = 200L
 
-        val completedOrder =
-            Order(
-                orderId = orderId,
-                userId = userId,
-                orderItems =
-                    listOf(
-                        OrderItem(productId = 1L, quantity = 2, unitPrice = 10000L),
-                        OrderItem(productId = 2L, quantity = 1, unitPrice = 20000L),
-                    ),
-                orderStatus = OrderStatus.COMPLETED,
-                usedCouponId = 10L,
-                paymentId = paymentId,
-                createdAt = System.currentTimeMillis(),
-            )
+        // Order 생성 (Aggregate Root 패턴)
+        val completedOrder = Order(
+            orderId = orderId,
+            userId = userId,
+            usedCouponId = 10L
+        ).apply {
+            // Order를 통해 OrderItem 추가
+            addOrderItem(productId = 1L, quantity = 2, unitPrice = 10000L)
+            addOrderItem(productId = 2L, quantity = 1, unitPrice = 20000L)
+
+            // 상태 변경을 통해 완료 상태로 만들기
+            prepareProducts()
+            readyForPayment()
+            paid(paymentId)
+            complete()
+        }
 
         val request =
             mapOf(
@@ -102,19 +104,21 @@ class OrderControllerTest {
         val orderId = 100L
         val paymentId = 200L
 
-        val completedOrder =
-            Order(
-                orderId = orderId,
-                userId = userId,
-                orderItems =
-                    listOf(
-                        OrderItem(productId = 1L, quantity = 1, unitPrice = 15000L),
-                    ),
-                orderStatus = OrderStatus.COMPLETED,
-                usedCouponId = null,
-                paymentId = paymentId,
-                createdAt = System.currentTimeMillis(),
-            )
+        // Order 생성 (Aggregate Root 패턴)
+        val completedOrder = Order(
+            orderId = orderId,
+            userId = userId,
+            usedCouponId = null
+        ).apply {
+            // Order를 통해 OrderItem 추가
+            addOrderItem(productId = 1L, quantity = 1, unitPrice = 15000L)
+
+            // 상태 변경을 통해 완료 상태로 만들기
+            prepareProducts()
+            readyForPayment()
+            paid(paymentId)
+            complete()
+        }
 
         val request =
             mapOf(
