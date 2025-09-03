@@ -13,19 +13,16 @@ class ProductSale(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_sale_id")
     val productSaleId: Long = 0L,
-
     @Column(name = "product_id", nullable = false)
     val productId: Long,
-
     @Column(name = "sale_date", nullable = false)
     val saleDate: Long, // YYYYMMDD 형태의 날짜 (예: 20231225)
-
     @Column(name = "total_quantity", nullable = false)
     val totalQuantity: Int,
-
-    @Column(name = "created_at", nullable = false)
-    val createdAt: Long = System.currentTimeMillis(),
 ) {
+    @Column(name = "created_at", nullable = false)
+    val createdAt: Long = System.currentTimeMillis()
+
     init {
         require(productId > 0) { "상품 ID는 0보다 커야 합니다. 입력된 ID: $productId" }
         require(saleDate > 0) { "판매 날짜는 0보다 커야 합니다. 입력된 날짜: $saleDate" }
