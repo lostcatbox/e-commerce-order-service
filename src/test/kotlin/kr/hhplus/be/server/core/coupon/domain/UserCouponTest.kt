@@ -137,7 +137,6 @@ class UserCouponTest {
             val userId = 1L
             val couponId = 1L
             val status = UserCouponStatus.ISSUED
-            val issuedAt = System.currentTimeMillis()
 
             // when
             val userCoupon =
@@ -145,15 +144,12 @@ class UserCouponTest {
                     userId = userId,
                     couponId = couponId,
                     status = status,
-                    issuedAt = issuedAt,
-                    usedAt = null,
                 )
 
             // then
             assertEquals(userId, userCoupon.userId)
             assertEquals(couponId, userCoupon.couponId)
             assertEquals(status, userCoupon.getStatus())
-            assertEquals(issuedAt, userCoupon.issuedAt)
             assertNull(userCoupon.getUsedAt())
         }
     }

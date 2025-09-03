@@ -10,7 +10,8 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 @Transactional
-class CouponService(
+class
+CouponService(
     private val couponRepository: CouponRepository,
 ) : CouponServiceInterface {
     /**
