@@ -14,4 +14,12 @@ interface JpaPaymentRepository : JpaRepository<Payment, Long> {
      * @return Payment 또는 null
      */
     fun findByPaymentId(paymentId: Long): Payment?
+
+    /**
+     * 주문 ID로 결제 조회
+     * @param orderId 주문 ID
+     * @return Payment 또는 null
+     */
+    @Query("SELECT p FROM Payment p join Order o ON p.paymentId = o.paymentId WHERE o.orderId = :orderId")
+    fun findByOrderId(orderId: Long): Payment?
 }

@@ -16,9 +16,5 @@ class PaymentRepositoryImpl(
 
     override fun findByPaymentId(paymentId: Long): Payment? = jpaPaymentRepository.findByPaymentId(paymentId)
 
-    override fun findByOrderId(orderId: Long): Payment? {
-        // Note: 현재 Payment 모델에 orderId가 없어서 임시로 구현
-        // 실제로는 Order와의 관계를 통해 조회해야 함
-        TODO("Order와 Payment 관계 정의 후 구현 필요")
-    }
+    override fun findByOrderId(orderId: Long): Payment? = jpaPaymentRepository.findByOrderId(orderId)
 }
