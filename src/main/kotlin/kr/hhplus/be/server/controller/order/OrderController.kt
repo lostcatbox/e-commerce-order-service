@@ -49,7 +49,6 @@ class OrderController(
 
             return ResponseEntity.ok(response)
         } catch (e: Exception) {
-            // TODO : 적절한 예외 처리 및 응답 반환
             throw e
         }
     }
