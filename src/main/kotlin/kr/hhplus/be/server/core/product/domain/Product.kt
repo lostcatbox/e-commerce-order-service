@@ -1,13 +1,27 @@
 package kr.hhplus.be.server.core.product.domain
 
+import jakarta.persistence.*
+
 /**
  * 상품 도메인 모델
  */
+@Entity
+@Table(name = "product")
 class Product(
+    @Id
+    @Column(name = "product_id")
     val productId: Long,
+
+    @Column(name = "name", nullable = false)
     val name: String,
+
+    @Column(name = "description", nullable = false)
     val description: String,
+
+    @Column(name = "price", nullable = false)
     val price: Long,
+
+    @Column(name = "stock", nullable = false)
     private var stock: Int,
 ) {
     companion object {

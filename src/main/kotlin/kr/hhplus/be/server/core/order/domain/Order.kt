@@ -1,22 +1,40 @@
 package kr.hhplus.be.server.core.order.domain
 
+import jakarta.persistence.*
+
 /**
- * 주문 도메인 모델
+ * 주문 Aggregate Root
+ * OrderItem들의 생명주기를 완전히 관리함
  */
+@Entity
+@Table(name = "orders")
 class Order(
-    val orderId: Long,
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_id")
+    val orderId: Long = 0L,
+    @Column(name = "user_id", nullable = false)
     val userId: Long,
-    val orderItems: List<OrderItem>,
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+        name = "order_items",
+        joinColumns = [JoinColumn(name = "order_id")],
+    )
+    private val _orderItems: MutableList<OrderItem> = mutableListOf(),
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     private var orderStatus: OrderStatus = OrderStatus.REQUESTED,
+    @Column(name = "used_coupon_id")
     val usedCouponId: Long? = null,
+    @Column(name = "payment_id")
     private var paymentId: Long? = null,
+    @Column(name = "created_at", nullable = false)
     private val createdAt: Long = System.currentTimeMillis(),
+    @Column(name = "updated_at", nullable = false)
+    private var updatedAt: Long = System.currentTimeMillis(),
 ) {
     init {
-        require(orderId > 0) { "주문 ID는 0보다 커야 합니다. 입력된 ID: $orderId" }
         require(userId > 0) { "사용자 ID는 0보다 커야 합니다. 입력된 ID: $userId" }
-        require(orderItems.isNotEmpty()) { "주문 상품은 1개 이상이어야 합니다." }
-        require(orderItems.all { it.quantity >= 1 }) { "모든 주문 상품의 수량은 1 이상이어야 합니다." }
     }
 
     /**
@@ -35,19 +53,14 @@ class Order(
     fun getCreatedAt(): Long = createdAt
 
     /**
-     * 주문 총 금액 계산
+     * OrderItem 목록 조회 (읽기 전용)
      */
-    fun calculateTotalAmount(): Long = orderItems.sumOf { it.totalPrice }
+    val orderItems: List<OrderItem> get() = _orderItems.toList()
 
     /**
-     * 주문 상태 변경
+     * 주문 총 금액 계산
      */
-    private fun changeStatus(newStatus: OrderStatus) {
-        require(orderStatus.canChangeTo(newStatus)) {
-            "주문 상태를 ${orderStatus.description}에서 ${newStatus.description}로 변경할 수 없습니다."
-        }
-        this.orderStatus = newStatus
-    }
+    fun calculateTotalAmount(): Long = _orderItems.sumOf { it.totalPrice }
 
     /**
      * 상품 준비 완료 처리
@@ -105,4 +118,45 @@ class Order(
      * 결제 가능 상태인지 확인
      */
     fun isReadyForPayment(): Boolean = orderStatus == OrderStatus.PAYMENT_READY
+
+    /**
+     * 주문 상품 추가 (Aggregate Root를 통한 일관성 보장)
+     */
+    fun addOrderItem(
+        productId: Long,
+        quantity: Int,
+        unitPrice: Long,
+    ) {
+        require(productId > 0) { "상품 ID는 0보다 커야 합니다. 입력된 ID: $productId" }
+        require(quantity >= OrderItem.MIN_QUANTITY) { "주문 수량은 ${OrderItem.MIN_QUANTITY} 이상이어야 합니다. 입력된 수량: $quantity" }
+        require(quantity <= OrderItem.MAX_QUANTITY) { "주문 수량은 ${OrderItem.MAX_QUANTITY} 이하여야 합니다. 입력된 수량: $quantity" }
+        require(unitPrice > 0) { "상품 단가는 0보다 커야 합니다. 입력된 단가: $unitPrice" }
+
+        val orderItem = OrderItem(productId, quantity, unitPrice)
+        _orderItems.add(orderItem)
+        updateTimestamp()
+    }
+
+    /**
+     * 주문 상품이 있는지 확인
+     */
+    fun isNotEmpty(): Boolean = _orderItems.isNotEmpty()
+
+    /**
+     * 업데이트 시간 갱신
+     */
+    private fun updateTimestamp() {
+        this.updatedAt = System.currentTimeMillis()
+    }
+
+    /**
+     * 상태 변경 시 업데이트 시간 갱신
+     */
+    private fun changeStatus(newStatus: OrderStatus) {
+        require(orderStatus.canChangeTo(newStatus)) {
+            "주문 상태를 ${orderStatus.description}에서 ${newStatus.description}로 변경할 수 없습니다."
+        }
+        this.orderStatus = newStatus
+        updateTimestamp()
+    }
 }

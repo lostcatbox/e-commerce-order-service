@@ -3,12 +3,12 @@ services:
   mysql:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3309:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_USER=application
       - MYSQL_PASSWORD=application
-      - MYSQL_DATABASE=hhplus
+      - MYSQL_DATABASE=e_commerce_db
     volumes:
       - ./data/mysql/:/var/lib/mysql
 

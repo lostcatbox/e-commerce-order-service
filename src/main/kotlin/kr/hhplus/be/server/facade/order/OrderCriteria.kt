@@ -1,8 +1,8 @@
 package kr.hhplus.be.server.facade.order
 
-import kr.hhplus.be.server.core.order.domain.CreateOrderCommand
-import kr.hhplus.be.server.core.order.domain.OrderItemCommand
-import kr.hhplus.be.server.core.product.domain.SaleProductsCommand
+import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
+import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
+import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
 
 /**
  * 주문 생성 기준

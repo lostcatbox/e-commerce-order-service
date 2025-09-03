@@ -2,8 +2,8 @@ package kr.hhplus.be.server.core.payment.service
 
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.payment.domain.Payment
-import kr.hhplus.be.server.core.payment.domain.ProcessPaymentCommand
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
+import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * 결제 서비스 구현체
  *
- * TODO : 현재 PaymentService에는 Repository와 PointService가 주입되어, Service(동등한 레이어)가 직접 사용되므로 해당 아키텍처가 적절한지 검토가 필요합니다.
+ * TODO : 현재 PaymentService에는 Repository와 PointService가 주입되어, Service(동등한 레이어)가 직접 사용되므로 해당 아키텍처가 적절한지 검토하다.
  */
 @Service
 @Transactional
@@ -32,14 +32,7 @@ class PaymentService(
         val discountAmount = command.coupon?.discountAmount ?: 0L
 
         // 결제 생성
-        val paymentId = paymentRepository.generateNextPaymentId()
-        val payment =
-            Payment(
-                paymentId = paymentId,
-                orderId = command.order.orderId,
-                originalAmount = originalAmount,
-                discountAmount = discountAmount,
-            )
+        val payment = Payment.createPayment(originalAmount, discountAmount)
 
         try {
             // 포인트 결제 처리

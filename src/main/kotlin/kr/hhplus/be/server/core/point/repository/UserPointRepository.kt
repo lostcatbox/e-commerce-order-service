@@ -19,10 +19,4 @@ interface UserPointRepository {
      * @return 저장된 UserPoint
      */
     fun save(userPoint: UserPoint): UserPoint
-
-    /**
-     * 사용자 포인트 삭제
-     * @param userId 사용자 ID
-     */
-    fun deleteByUserId(userId: Long)
 }

@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.core.payment.service
 
 import kr.hhplus.be.server.core.payment.domain.Payment
-import kr.hhplus.be.server.core.payment.domain.ProcessPaymentCommand
+import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 
 /**
  * 결제 서비스 인터페이스

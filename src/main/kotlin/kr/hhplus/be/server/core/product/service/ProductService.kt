@@ -1,8 +1,8 @@
 package kr.hhplus.be.server.core.product.service
 
 import kr.hhplus.be.server.core.product.domain.Product
-import kr.hhplus.be.server.core.product.domain.SaleProductsCommand
 import kr.hhplus.be.server.core.product.repository.ProductRepository
+import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

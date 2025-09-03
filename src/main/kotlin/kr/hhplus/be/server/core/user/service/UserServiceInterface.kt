@@ -1,5 +1,7 @@
 package kr.hhplus.be.server.core.user.service
 
+import kr.hhplus.be.server.core.user.domain.User
+
 /**
  * 사용자 서비스 인터페이스
  */

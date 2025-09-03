@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.core.order.service
 
-import kr.hhplus.be.server.core.order.domain.CreateOrderCommand
 import kr.hhplus.be.server.core.order.domain.Order
+import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
 
 /**
  * 주문 서비스 인터페이스

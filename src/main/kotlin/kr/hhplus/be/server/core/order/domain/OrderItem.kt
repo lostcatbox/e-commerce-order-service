@@ -1,11 +1,20 @@
 package kr.hhplus.be.server.core.order.domain
 
+import jakarta.persistence.*
+
 /**
- * 주문 상품 도메인 모델
+ * 주문 상품 Value Object
+ * Order Aggregate의 일부로 동작
  */
+@Embeddable
 data class OrderItem(
+    @Column(name = "product_id", nullable = false)
     val productId: Long,
+
+    @Column(name = "quantity", nullable = false)
     val quantity: Int,
+
+    @Column(name = "unit_price", nullable = false)
     val unitPrice: Long,
 ) {
     val totalPrice: Long = calculateTotalPrice()

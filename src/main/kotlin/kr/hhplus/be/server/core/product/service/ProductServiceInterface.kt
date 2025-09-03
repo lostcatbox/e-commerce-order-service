@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.core.product.service
 
 import kr.hhplus.be.server.core.product.domain.Product
-import kr.hhplus.be.server.core.product.domain.SaleProductsCommand
+import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
 
 /**
  * 상품 서비스 인터페이스

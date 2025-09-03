@@ -7,9 +7,9 @@ import kr.hhplus.be.server.core.order.domain.OrderItem
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.payment.domain.Payment
 import kr.hhplus.be.server.core.payment.domain.PaymentStatus
-import kr.hhplus.be.server.core.payment.domain.ProcessPaymentCommand
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
 import kr.hhplus.be.server.core.payment.service.PaymentService
+import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -54,7 +54,6 @@ class PaymentServiceTest {
         val expectedPayment =
             Payment(
                 paymentId = paymentId,
-                orderId = orderId,
                 originalAmount = orderAmount,
                 discountAmount = 0L,
                 paymentStatus = PaymentStatus.SUCCESS,
@@ -68,7 +67,6 @@ class PaymentServiceTest {
 
         // then
         assertEquals(paymentId, result.paymentId)
-        assertEquals(orderId, result.orderId)
         assertEquals(orderAmount, result.originalAmount)
         assertEquals(0L, result.discountAmount)
         assertEquals(orderAmount, result.finalAmount)
@@ -104,7 +102,6 @@ class PaymentServiceTest {
         val expectedPayment =
             Payment(
                 paymentId = paymentId,
-                orderId = orderId,
                 originalAmount = orderAmount,
                 discountAmount = discountAmount,
                 paymentStatus = PaymentStatus.SUCCESS,
@@ -118,7 +115,6 @@ class PaymentServiceTest {
 
         // then
         assertEquals(paymentId, result.paymentId)
-        assertEquals(orderId, result.orderId)
         assertEquals(orderAmount, result.originalAmount)
         assertEquals(discountAmount, result.discountAmount)
         assertEquals(finalAmount, result.finalAmount)
@@ -144,7 +140,6 @@ class PaymentServiceTest {
         val failedPayment =
             Payment(
                 paymentId = paymentId,
-                orderId = orderId,
                 originalAmount = orderAmount,
                 paymentStatus = PaymentStatus.FAILED,
             )
@@ -270,7 +265,6 @@ class PaymentServiceTest {
         val expectedPayment =
             Payment(
                 paymentId = paymentId,
-                orderId = orderId,
                 originalAmount = minAmount,
                 paymentStatus = PaymentStatus.SUCCESS,
             )

@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.core.payment.domain
+package kr.hhplus.be.server.core.payment.service.dto
 
 import kr.hhplus.be.server.core.coupon.domain.Coupon
 import kr.hhplus.be.server.core.order.domain.Order
