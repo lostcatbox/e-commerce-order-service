@@ -36,31 +36,21 @@ class ProductSaleRepositoryImpl(
         )
     }
 
-    override fun saveProductSale(
+    /**
+     * ProductSale 도메인 객체 저장
+     * Infrastructure 계층은 순수하게 데이터 접근만 담당
+     */
+    override fun save(productSale: ProductSale): ProductSale {
+        return jpaProductSaleRepository.save(productSale)
+    }
+
+    /**
+     * 상품 ID와 판매 날짜로 ProductSale 조회
+     */
+    override fun findByProductIdAndSaleDate(
         productId: Long,
         saleDate: Long,
-        quantity: Int,
-    ) {
-        val existingProductSale = jpaProductSaleRepository.findByProductIdAndSaleDate(productId, saleDate)
-
-        if (existingProductSale != null) {
-            // 기존 데이터가 있으면 수량 업데이트 (새 엔티티 생성)
-            val updatedProductSale =
-                ProductSale(
-                    productId = productId,
-                    saleDate = saleDate,
-                    totalQuantity = existingProductSale.totalQuantity + quantity,
-                )
-            jpaProductSaleRepository.save(updatedProductSale)
-        } else {
-            // 새 데이터 생성
-            val newProductSale =
-                ProductSale(
-                    productId = productId,
-                    saleDate = saleDate,
-                    totalQuantity = quantity,
-                )
-            jpaProductSaleRepository.save(newProductSale)
-        }
+    ): ProductSale? {
+        return jpaProductSaleRepository.findByProductIdAndSaleDate(productId, saleDate)
     }
 }
