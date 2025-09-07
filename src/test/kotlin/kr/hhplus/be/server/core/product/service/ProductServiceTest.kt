@@ -98,46 +98,6 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("인기 상품 목록 조회 성공")
-    fun `인기 상품 목록 조회 성공`() {
-        // given
-        val expectedProducts =
-            listOf(
-                Product(1L, "인기상품 1", "인기상품 1 설명", 15000L, 50),
-                Product(2L, "인기상품 2", "인기상품 2 설명", 20000L, 30),
-                Product(3L, "인기상품 3", "인기상품 3 설명", 12000L, 80),
-                Product(4L, "인기상품 4", "인기상품 4 설명", 25000L, 20),
-                Product(5L, "인기상품 5", "인기상품 5 설명", 18000L, 60),
-            )
-
-        `when`(productRepository.findPopularProducts()).thenReturn(expectedProducts)
-
-        // when
-        val result = productService.getPopularProducts()
-
-        // then
-        assertEquals(expectedProducts.size, result.size)
-        assertEquals(expectedProducts, result)
-        verify(productRepository, times(1)).findPopularProducts()
-    }
-
-    @Test
-    @DisplayName("인기 상품 목록이 비어있는 경우")
-    fun `인기 상품 목록이 비어있는 경우`() {
-        // given
-        val emptyProductList = emptyList<Product>()
-
-        `when`(productRepository.findPopularProducts()).thenReturn(emptyProductList)
-
-        // when
-        val result = productService.getPopularProducts()
-
-        // then
-        assertTrue(result.isEmpty())
-        verify(productRepository, times(1)).findPopularProducts()
-    }
-
-    @Test
     @DisplayName("상품 조회 성공 ")
     fun `상품 조회 성공 - 경계값 테스트`() {
         // given

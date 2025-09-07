@@ -16,6 +16,5 @@ data class PopularProductInfo(
     val name: String,
     val description: String,
     val price: Long,
-    val stock: Int,
-    val salesCount: Int,
+    val salesCount: Long,
 )

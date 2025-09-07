@@ -9,6 +9,7 @@ import kr.hhplus.be.server.core.order.service.OrderStatisticsService
 import kr.hhplus.be.server.core.order.service.dto.SendOrderStatisticCommand
 import kr.hhplus.be.server.core.payment.service.PaymentServiceInterface
 import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
+import kr.hhplus.be.server.core.product.service.ProductSaleService
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import kr.hhplus.be.server.core.user.service.UserServiceInterface
 import org.springframework.stereotype.Service
@@ -36,6 +37,7 @@ class OrderFacade(
     private val paymentService: PaymentServiceInterface,
     private val couponService: CouponServiceInterface,
     private val userCouponService: UserCouponServiceInterface,
+    private val productSaleService: ProductSaleService,
 ) {
     /**
      * 주문 처리 전체 프로세스
@@ -82,6 +84,11 @@ class OrderFacade(
         // 10. 외부 통계 시스템에 주문 정보 전송
         val orderInfo = SendOrderStatisticCommand(finalOrder)
         orderStatisticsService.sendOrderStatistics(orderInfo)
+
+        // 11. 주문된 제품 판매량 통계 업데이트 처리
+        order.orderItems.map {
+            productSaleService.recordProductSale(it.productId, it.quantity)
+        }
 
         // 11. 완료된 주문 반환
         return finalOrder

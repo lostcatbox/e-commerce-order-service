@@ -19,10 +19,4 @@ interface ProductRepository {
      * @return 저장된 상품 정보
      */
     fun save(product: Product): Product
-
-    /**
-     * 최근 3일간 가장 많이 팔린 상위 5개 상품 조회
-     * @return 인기 상품 목록 (판매량 기준 내림차순)
-     */
-    fun findPopularProducts(): List<Product>
 }

@@ -25,12 +25,6 @@ class ProductService(
     }
 
     /**
-     * 최근 3일간 가장 많이 팔린 상위 5개 상품 조회
-     * TODO: 요구사항: 초당 1만 건 조회를 평균 0.3ms 안에 응답
-     */
-    override fun getPopularProducts(): List<Product> = productRepository.findPopularProducts()
-
-    /**
      * 주문 상품들 판매 처리 (재고 차감)
      */
     @Transactional

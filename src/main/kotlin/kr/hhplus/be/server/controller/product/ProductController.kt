@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.controller.product
 
 import kr.hhplus.be.server.controller.product.dto.*
+import kr.hhplus.be.server.core.product.service.ProductSaleServiceInterface
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/products")
 class ProductController(
     private val productService: ProductServiceInterface,
+    private val productSaleService: ProductSaleServiceInterface,
 ) {
     /**
      * 상품 정보 조회
@@ -40,17 +42,16 @@ class ProductController(
      */
     @GetMapping("/popular")
     fun getPopularProducts(): ResponseEntity<PopularProductsResponse> {
-        val popularProducts = productService.getPopularProducts()
+        val popularProducts = productSaleService.getPopularProducts()
 
         val productsInfo =
             popularProducts.map { product ->
                 PopularProductInfo(
                     productId = product.productId,
-                    name = product.name,
-                    description = product.description,
-                    price = product.price,
-                    stock = product.getStock(),
-                    salesCount = 0, // 실제 구현에서는 판매량 정보가 필요함 (별도 엔티티 또는 집계 데이터)
+                    name = product.productName,
+                    description = product.productDescription,
+                    price = product.productPrice,
+                    salesCount = product.totalSales,
                 )
             }
 
