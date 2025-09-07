@@ -23,14 +23,20 @@ interface ProductSaleRepository {
     ): List<ProductPeriodSaleDto>
 
     /**
-     * 상품 판매량 데이터 저장/업데이트
+     * 상품 판매량 데이터 저장
+     * @param productSale 저장할 ProductSale 도메인 객체
+     * @return 저장된 ProductSale 도메인 객체
+     */
+    fun save(productSale: ProductSale): ProductSale
+
+    /**
+     * 특정 상품의 특정 날짜 판매 데이터 조회
      * @param productId 상품 ID
      * @param saleDate 판매 날짜 (YYYYMMDD 형태)
-     * @param quantity 판매 수량
+     * @return 해당 조건의 ProductSale 또는 null
      */
-    fun saveProductSale(
+    fun findByProductIdAndSaleDate(
         productId: Long,
         saleDate: Long,
-        quantity: Int,
-    )
+    ): ProductSale?
 }

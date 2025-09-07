@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.core.product.service
 
-import com.sun.org.apache.xalan.internal.lib.ExsltDatetime.dateTime
 import jakarta.transaction.Transactional
+import kr.hhplus.be.server.core.product.domain.ProductSale
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import kr.hhplus.be.server.core.product.repository.ProductSaleRepository
 import kr.hhplus.be.server.core.product.service.dto.PopularProductDto
@@ -22,8 +22,8 @@ class ProductSaleService(
         val now = LocalDate.now()
         val threeDaysAgo = now.minusDays(3)
 
-        // Database에서 3일간 판매량을 집계하여 조회 (ProductSale 테이블만 사용)
-        // TODO : ProductName 때문에 N+1 문제가 발생할 수 있음 -> 반정규화 또는 캐싱 고려
+        // DB 에서 3일간 판매량을 집계하여 조회 (ProductSale 테이블만 사용)(실시간 데이터 아님)
+        // TODO : Product의 name, description, price 때문에 N+1 문제가 발생 중 -> 반정규화 또는 캐싱 고려
         return productSaleRepository
             .findPopularProductsInfo(threeDaysAgo, now)
             .mapNotNull { salesInfo ->
@@ -40,19 +40,53 @@ class ProductSaleService(
             }
     }
 
+    /**
+     * 상품 판매량 기록
+     * 기존 판매 데이터가 있으면 수량을 누적하고, 없으면 새로 생성
+     */
     @Transactional
     override fun recordProductSale(
         productId: Long,
         quantity: Int,
     ) {
+        validateProductId(productId)
+        validateQuantity(quantity)
+
         val today = LocalDate.now()
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
         val saleDate = today.format(formatter).toLong()
 
-        productSaleRepository.saveProductSale(
-            productId = productId,
-            saleDate = saleDate,
-            quantity = quantity,
-        )
+        // 기존 판매 데이터 조회
+        val existingSale = productSaleRepository.findByProductIdAndSaleDate(productId, saleDate)
+
+        val productSale =
+            if (existingSale != null) {
+                // 판매 데이터에 수량 추가
+                existingSale.addSaleQuantity(quantity)
+            } else {
+                // 새 판매 데이터 생성
+                ProductSale.createNewSale(
+                    productId = productId,
+                    saleDate = saleDate,
+                    quantity = quantity,
+                )
+            }
+
+        // 판매 데이터 저장
+        productSaleRepository.save(productSale)
+    }
+
+    /**
+     * 상품 ID 유효성 검증
+     */
+    private fun validateProductId(productId: Long) {
+        require(productId > 0) { "상품 ID는 0보다 커야 합니다. 입력된 ID: $productId" }
+    }
+
+    /**
+     * 수량 유효성 검증
+     */
+    private fun validateQuantity(quantity: Int) {
+        require(quantity > 0) { "판매 수량은 0보다 커야 합니다. 입력된 수량: $quantity" }
     }
 }

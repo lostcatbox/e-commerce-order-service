@@ -23,9 +23,48 @@ class ProductSale(
     @Column(name = "created_at", nullable = false)
     val createdAt: Long = System.currentTimeMillis()
 
+    companion object {
+
+        /**
+         * 새로운 판매 데이터 생성 팩토리 메서드
+         * @param productId 상품 ID
+         * @param saleDate 판매 날짜 (YYYYMMDD 형태)
+         * @param quantity 판매 수량
+         * @return 새로운 ProductSale 인스턴스
+         */
+        fun createNewSale(
+            productId: Long,
+            saleDate: Long,
+            quantity: Int,
+        ): ProductSale {
+            return ProductSale(
+                productId = productId,
+                saleDate = saleDate,
+                totalQuantity = quantity,
+            )
+        }
+    }
+
     init {
         require(productId > 0) { "상품 ID는 0보다 커야 합니다. 입력된 ID: $productId" }
         require(saleDate > 0) { "판매 날짜는 0보다 커야 합니다. 입력된 날짜: $saleDate" }
         require(totalQuantity >= 0) { "총 판매량은 0 이상이어야 합니다. 입력된 판매량: $totalQuantity" }
+    }
+
+    /**
+     * 판매 수량 추가
+     * 기존 판매량에 새로운 판매량을 추가하여 새로운 ProductSale 인스턴스를 반환
+     *
+     * @param additionalQuantity 추가할 판매 수량
+     * @return 수량이 추가된 새로운 ProductSale 인스턴스
+     */
+    fun addSaleQuantity(additionalQuantity: Int): ProductSale {
+        val newTotalQuantity = this.totalQuantity + additionalQuantity
+
+        return ProductSale(
+            productId = this.productId,
+            saleDate = this.saleDate,
+            totalQuantity = newTotalQuantity,
+        )
     }
 }
