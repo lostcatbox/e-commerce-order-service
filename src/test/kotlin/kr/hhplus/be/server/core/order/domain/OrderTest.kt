@@ -1,10 +1,6 @@
 package kr.hhplus.be.server.core.order.domain
 
-import kr.hhplus.be.server.core.order.domain.Order
-import kr.hhplus.be.server.core.order.domain.OrderItem
 import kr.hhplus.be.server.core.order.domain.OrderItem.Companion.MAX_QUANTITY
-import kr.hhplus.be.server.core.order.domain.OrderItem.Companion.MIN_QUANTITY
-import kr.hhplus.be.server.core.order.domain.OrderStatus
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -18,23 +14,23 @@ class OrderTest {
         // given
         val orderId = 1L
         val userId = 1L
-        val orderItems =
-            listOf(
-                OrderItem(productId = 1L, quantity = 2, unitPrice = 10000L),
-                OrderItem(productId = 2L, quantity = 1, unitPrice = 20000L),
-            )
 
         // when
-        val order = Order(orderId, userId, orderItems)
+        val order =
+            Order(orderId, userId).apply {
+                addOrderItem(productId = 1L, quantity = 2, unitPrice = 10000L)
+                addOrderItem(productId = 2L, quantity = 1, unitPrice = 20000L)
+            }
 
         // then
         assertEquals(orderId, order.orderId)
         assertEquals(userId, order.userId)
-        assertEquals(orderItems, order.orderItems)
+        assertEquals(2, order.getOrderItemCount())
         assertEquals(OrderStatus.REQUESTED, order.getOrderStatus())
         assertNull(order.usedCouponId)
         assertNull(order.getPaymentId())
         assertTrue(order.getCreatedAt() > 0)
+        assertDoesNotThrow { order.validNotEmptyOrderItems() }
     }
 
     @Test
@@ -43,30 +39,17 @@ class OrderTest {
         // given
         val orderId = 1L
         val userId = 1L
-        val orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L))
         val usedCouponId = 100L
 
         // when
-        val order = Order(orderId, userId, orderItems, usedCouponId = usedCouponId)
+        val order =
+            Order(orderId, userId, usedCouponId = usedCouponId).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
 
         // then
         assertEquals(usedCouponId, order.usedCouponId)
-    }
-
-    @Test
-    @DisplayName("주문 ID가 0보다 작거나 같으면 예외 발생")
-    fun `주문 ID가 0보다 작거나 같으면 예외 발생`() {
-        // given
-        val invalidOrderId = 0L
-        val userId = 1L
-        val orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L))
-
-        // when & then
-        val exception =
-            assertThrows<IllegalArgumentException> {
-                Order(invalidOrderId, userId, orderItems)
-            }
-        assertTrue(exception.message!!.contains("주문 ID는 0보다 커야 합니다"))
+        assertEquals(1, order.getOrderItemCount())
     }
 
     @Test
@@ -75,44 +58,27 @@ class OrderTest {
         // given
         val orderId = 1L
         val invalidUserId = 0L
-        val orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L))
 
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                Order(orderId, invalidUserId, orderItems)
+                Order(orderId, invalidUserId)
             }
         assertTrue(exception.message!!.contains("사용자 ID는 0보다 커야 합니다"))
     }
 
     @Test
-    @DisplayName("주문 상품이 비어있으면 예외 발생")
-    fun `주문 상품이 비어있으면 예외 발생`() {
+    @DisplayName("주문 상품 중 수량이 1보다 작은 것이 있으면 예외 발생")
+    fun `주문 상품 중 수량이 1보다 작은 것이 있으면 예외 발생`() {
         // given
         val orderId = 1L
         val userId = 1L
-        val emptyOrderItems = emptyList<OrderItem>()
+        val order = Order(orderId, userId)
 
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                Order(orderId, userId, emptyOrderItems)
-            }
-        assertTrue(exception.message!!.contains("주문 상품은 1개 이상이어야 합니다"))
-    }
-
-    @Test
-    @DisplayName("주문 상품 중 수량이 1보다 작은 것이 있으면 예외 발생")
-    fun `주문 상품 중 수량이 1보다 작은 것이 있으면 예외 발생`() {
-        // given - OrderItem 생성 시점에서 예외 발생
-        val orderId = 1L
-        val userId = 1L
-
-        // when & then
-        val exception =
-            assertThrows<IllegalArgumentException> {
-                val invalidOrderItem = OrderItem(productId = 2L, quantity = 0, unitPrice = 20000L) // 잘못된 수량
-                Order(orderId, userId, listOf(invalidOrderItem))
+                order.addOrderItem(productId = 2L, quantity = 0, unitPrice = 20000L) // 잘못된 수량
             }
         assertTrue(exception.message!!.contains("주문 수량은 1 이상이어야 합니다"))
     }
@@ -122,21 +88,17 @@ class OrderTest {
     fun `주문 총 금액 계산`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems =
-                    listOf(
-                        OrderItem(productId = 1L, quantity = 2, unitPrice = 10000L), // 20,000원
-                        OrderItem(productId = 2L, quantity = 1, unitPrice = 30000L), // 30,000원
-                    ),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 2, unitPrice = 10000L) // 20,000원
+                addOrderItem(productId = 2L, quantity = 1, unitPrice = 30000L) // 30,000원
+            }
 
         // when
         val totalAmount = order.calculateTotalAmount()
 
         // then
         assertEquals(50000L, totalAmount)
+        assertEquals(2, order.getOrderItemCount())
     }
 
     @Test
@@ -144,11 +106,9 @@ class OrderTest {
     fun `상품 준비 완료 상태로 변경`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
 
         // when
         order.prepareProducts()
@@ -162,11 +122,9 @@ class OrderTest {
     fun `결제 대기 상태로 변경`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
         order.prepareProducts() // PRODUCT_READY 상태로 먼저 변경
 
         // when
@@ -181,11 +139,9 @@ class OrderTest {
     fun `결제 완료 처리`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
         order.prepareProducts()
         order.readyForPayment() // PAYMENT_READY 상태로 변경
         val paymentId = 100L
@@ -203,11 +159,9 @@ class OrderTest {
     fun `주문 완료 처리`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
         order.prepareProducts()
         order.readyForPayment()
         order.paid(100L) // PAYMENT_COMPLETED 상태로 변경
@@ -225,11 +179,9 @@ class OrderTest {
     fun `주문 실패 처리`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
 
         // when
         order.fail()
@@ -244,11 +196,9 @@ class OrderTest {
     fun `결제 가능 상태 확인 - REQUESTED 상태는 결제 불가`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
 
         // when & then
         assertFalse(order.isReadyForPayment())
@@ -259,11 +209,9 @@ class OrderTest {
     fun `잘못된 상태 변경 시 예외 발생 - REQUESTED에서 PAYMENT_READY로 직접 변경`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
 
         // when & then
         val exception =
@@ -279,11 +227,9 @@ class OrderTest {
     fun `완료된 주문의 상태 변경 시 예외 발생`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
         order.prepareProducts()
         order.readyForPayment()
         order.paid(100L)
@@ -303,11 +249,9 @@ class OrderTest {
     fun `결제 ID가 0보다 작거나 같으면 예외 발생`() {
         // given
         val order =
-            Order(
-                orderId = 1L,
-                userId = 1L,
-                orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)),
-            )
+            Order(orderId = 1L, userId = 1L).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+            }
         order.prepareProducts()
         order.readyForPayment()
         val invalidPaymentId = 0L
@@ -326,13 +270,17 @@ class OrderTest {
         // given
         val orderId = 1L
         val userId = 1L
-        val orderItems = listOf(OrderItem(productId = 1L, quantity = 1, unitPrice = 1L))
+        val order =
+            Order(orderId, userId).apply {
+                addOrderItem(productId = 1L, quantity = 1, unitPrice = 1L)
+            }
 
         // when
-        val order = Order(orderId, userId, orderItems)
+        val totalAmount = order.calculateTotalAmount()
 
         // then
-        assertEquals(1L, order.calculateTotalAmount())
+        assertEquals(1L, totalAmount)
+        assertEquals(1, order.getOrderItemCount())
     }
 
     @Test
@@ -341,14 +289,12 @@ class OrderTest {
         // given
         val orderId = 1L
         val userId = 1L
-        val orderItems = emptyList<OrderItem>()
+        val order = Order(orderId, userId)
 
         // when & then
-        val exception =
-            assertThrows<IllegalArgumentException> {
-                Order(orderId, userId, orderItems)
-            }
-        assertTrue(exception.message!!.contains("주문 상품은 ${MIN_QUANTITY}개 이상이어야 합니다"))
+        assertThrows<IllegalStateException> {
+            order.prepareProducts()
+        }
     }
 
     @Test
@@ -357,25 +303,30 @@ class OrderTest {
         // given
         val orderId = 1L
         val userId = 1L
-        val orderItems =
-            listOf(
-                OrderItem(productId = 1L, quantity = MAX_QUANTITY, unitPrice = 1000L),
-            )
+        val order =
+            Order(orderId, userId).apply {
+                addOrderItem(productId = 1L, quantity = MAX_QUANTITY, unitPrice = 1000L)
+            }
 
         // when
-        val order = Order(orderId, userId, orderItems)
+        val totalAmount = order.calculateTotalAmount()
 
         // then
-        assertEquals(MAX_QUANTITY * 1000L, order.calculateTotalAmount())
+        assertEquals(MAX_QUANTITY * 1000L, totalAmount)
     }
 
     @Test
     @DisplayName("경계값 테스트 - 최대 수량+1 주문")
     fun `경계값 테스트 - 최대 수량+1 주문`() {
+        // given
+        val orderId = 1L
+        val userId = 1L
+        val order = Order(orderId, userId)
+
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                OrderItem(productId = 1L, quantity = MAX_QUANTITY + 1, unitPrice = 1000L)
+                order.addOrderItem(productId = 1L, quantity = MAX_QUANTITY + 1, unitPrice = 1000L)
             }
         assertTrue(exception.message!!.contains("주문 수량은 ${MAX_QUANTITY} 이하여야 합니다."))
     }

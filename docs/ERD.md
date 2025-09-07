@@ -17,6 +17,7 @@ erDiagram
 
     PRODUCT {
         Long product_id PK "상품 식별자"
+        String name "상품 이름"
         String description "상품 설명"
         Long price "판매 금액"
         Integer stock "재고량(0~1,000)"
@@ -35,8 +36,8 @@ erDiagram
     }
 
     ORDER_ITEM {
-        Long order_id PK,FK "주문 식별자"
-        Long product_id PK,FK "상품 식별자"
+        Long order_id PK, FK "주문 식별자"
+        Long product_id FK "상품 식별자"
         Integer quantity "주문한 상품량"
         DateTime created_at "생성일시"
     }
@@ -44,6 +45,7 @@ erDiagram
     PAYMENT {
         Long payment_id PK "결제 식별자"
         Long original_amount "할인 전 결제 금액"
+        Long discount_amount "할인 금액"
         Long final_amount "최종 결제 금액"
         String status "결제 상태(REQUESTED/SUCCESS/FAILED)"
         DateTime created_at "생성일시"
@@ -61,8 +63,9 @@ erDiagram
     }
 
     USER_COUPON {
-        Long user_id PK,FK "사용자 식별자"
-        Long coupon_id PK,FK "선착순 쿠폰 식별자"
+        Long user_coupon_id PK "사용자 쿠폰 식별자"
+        Long user_id FK "사용자 식별자"
+        Long coupon_id FK "선착순 쿠폰 식별자"
         String status "쿠폰 상태(ISSUED/USED)"
         DateTime issued_at "발급일시"
         DateTime used_at "사용일시(nullable)"

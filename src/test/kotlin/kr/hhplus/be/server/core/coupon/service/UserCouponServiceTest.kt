@@ -17,7 +17,6 @@ import org.mockito.kotlin.*
 @ExtendWith(MockitoExtension::class)
 @DisplayName("UserCouponService 비즈니스 로직 테스트")
 class UserCouponServiceTest {
-
     @Mock
     private lateinit var userCouponRepository: UserCouponRepository
 
@@ -63,9 +62,10 @@ class UserCouponServiceTest {
         whenever(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).thenReturn(existingUserCoupon)
 
         // when & then
-        val exception = assertThrows<IllegalStateException> {
-            userCouponService.createUserCoupon(userId, couponId)
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                userCouponService.createUserCoupon(userId, couponId)
+            }
         assertTrue(exception.message!!.contains("이미 발급받은 쿠폰입니다"))
         assertTrue(exception.message!!.contains("사용자 ID: $userId"))
         assertTrue(exception.message!!.contains("쿠폰 ID: $couponId"))
@@ -82,9 +82,10 @@ class UserCouponServiceTest {
         val couponId = 100L
 
         // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            userCouponService.createUserCoupon(invalidUserId, couponId)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userCouponService.createUserCoupon(invalidUserId, couponId)
+            }
         assertTrue(exception.message!!.contains("사용자 ID는 0보다 커야 합니다"))
 
         verify(userCouponRepository, never()).findByUserIdAndCouponId(any(), any())
@@ -99,9 +100,10 @@ class UserCouponServiceTest {
         val invalidCouponId = -1L
 
         // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            userCouponService.createUserCoupon(userId, invalidCouponId)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userCouponService.createUserCoupon(userId, invalidCouponId)
+            }
         assertTrue(exception.message!!.contains("쿠폰 ID는 0보다 커야 합니다"))
 
         verify(userCouponRepository, never()).findByUserIdAndCouponId(any(), any())
@@ -113,10 +115,11 @@ class UserCouponServiceTest {
     fun `사용자 쿠폰 목록 조회 성공`() {
         // given
         val userId = 1L
-        val expectedUserCoupons = listOf(
-            UserCoupon.issueCoupon(userId, 100L),
-            UserCoupon.issueCoupon(userId, 200L)
-        )
+        val expectedUserCoupons =
+            listOf(
+                UserCoupon.issueCoupon(userId, 100L),
+                UserCoupon.issueCoupon(userId, 200L),
+            )
 
         whenever(userCouponRepository.findByUserId(userId)).thenReturn(expectedUserCoupons)
 
@@ -151,9 +154,10 @@ class UserCouponServiceTest {
         val invalidUserId = 0L
 
         // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            userCouponService.getUserCoupons(invalidUserId)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userCouponService.getUserCoupons(invalidUserId)
+            }
         assertTrue(exception.message!!.contains("사용자 ID는 0보다 커야 합니다"))
 
         verify(userCouponRepository, never()).findByUserId(any())
@@ -164,10 +168,11 @@ class UserCouponServiceTest {
     fun `사용 가능한 쿠폰 목록 조회 성공`() {
         // given
         val userId = 1L
-        val usableCoupons = listOf(
-            UserCoupon.issueCoupon(userId, 100L),
-            UserCoupon.issueCoupon(userId, 200L)
-        )
+        val usableCoupons =
+            listOf(
+                UserCoupon.issueCoupon(userId, 100L),
+                UserCoupon.issueCoupon(userId, 200L),
+            )
 
         whenever(userCouponRepository.findUsableCouponsByUserId(userId)).thenReturn(usableCoupons)
 
@@ -213,9 +218,10 @@ class UserCouponServiceTest {
         whenever(userCouponRepository.findByUserCouponId(userCouponId)).thenReturn(null)
 
         // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            userCouponService.useCoupon(userCouponId)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userCouponService.useCoupon(userCouponId)
+            }
         assertTrue(exception.message!!.contains("존재하지 않는 사용자 쿠폰입니다"))
         assertTrue(exception.message!!.contains("999"))
 
@@ -230,20 +236,13 @@ class UserCouponServiceTest {
         val invalidUserCouponId = 0L
 
         // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            userCouponService.useCoupon(invalidUserCouponId)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userCouponService.useCoupon(invalidUserCouponId)
+            }
         assertTrue(exception.message!!.contains("사용자 쿠폰 ID는 0보다 커야 합니다"))
 
         verify(userCouponRepository, never()).findByUserCouponId(any())
         verify(userCouponRepository, never()).save(any())
     }
-
-
-
-
-
-
-
-
 }

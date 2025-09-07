@@ -4,7 +4,7 @@ spring:
   profiles:
     active: local
   datasource:
-    name: HangHaePlusDataSource
+    name: ECommerceDataSource
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       maximum-pool-size: 3
@@ -26,6 +26,6 @@ spring.config.activate.on-profile: local, test
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/hhplus?characterEncoding=UTF-8&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3309/e_commerce_db?characterEncoding=UTF-8&serverTimezone=UTC
     username: application
     password: application

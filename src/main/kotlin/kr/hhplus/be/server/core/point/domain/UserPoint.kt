@@ -1,13 +1,26 @@
 package kr.hhplus.be.server.core.point.domain
 
+import jakarta.persistence.*
+
 /**
  * 사용자 포인트 도메인 모델
  */
+@Entity
+@Table(name = "point")
 class UserPoint(
+    @Id
+    @Column(name = "user_id")
     val userId: Long,
-    private var balance: Long,
-    private var lastUpdatedAt: Long = System.currentTimeMillis(),
 ) {
+    @Column(name = "balance", nullable = false)
+    private var balance: Long = 0L
+
+    @Column(name = "created_at", nullable = false)
+    val createdAt: Long = System.currentTimeMillis()
+
+    @Column(name = "updated_at", nullable = false)
+    private var lastUpdatedAt: Long = System.currentTimeMillis()
+
     companion object {
         const val MIN_BALANCE = 0L // 최소 잔액
         const val MAX_BALANCE = 2_000_000L // 최대 잔액
@@ -18,6 +31,7 @@ class UserPoint(
     }
 
     init {
+        require(userId > 0) { "사용자 ID는 0보다 커야 합니다. 입력된 ID: $userId" }
         require(balance >= MIN_BALANCE) { "잔액은 $MIN_BALANCE 이상이어야 합니다. 현재 잔액: $balance" }
         require(balance <= MAX_BALANCE) { "잔액은 $MAX_BALANCE 이하여야 합니다. 현재 잔액: $balance" }
     }

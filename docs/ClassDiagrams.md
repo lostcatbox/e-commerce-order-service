@@ -44,6 +44,7 @@ classDiagram
     }
 
     class OrderItem {
+        -Long orderId
         -Long productId
         -Integer quantity
         +createOrderItem(productId: Long, quantity: Integer) OrderItem
@@ -68,6 +69,7 @@ classDiagram
     class Payment {
         -Long paymentId
         -Long originalAmount
+        -Long discountAmount
         -Long finalAmount
         -PaymentStatus status
         +createPayment(coupon: Coupon, originalAmount: Long) Payment
@@ -118,6 +120,7 @@ classDiagram
 ```mermaid
 classDiagram
     class UserCoupon {
+        -Long userCouponId
         -Long userId
         -Long couponId
         -UserCouponStatus status

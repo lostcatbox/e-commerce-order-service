@@ -1,13 +1,28 @@
 package kr.hhplus.be.server.core.coupon.domain
 
+import jakarta.persistence.*
+
 /**
  * 선착순 쿠폰 도메인 모델
  */
+@Entity
+@Table(name = "coupon")
 class Coupon(
+    @Id
+    @Column(name = "coupon_id")
     val couponId: Long,
+
+    @Column(name = "description", nullable = false)
     val description: String,
+
+    @Column(name = "discount_amount", nullable = false)
     val discountAmount: Long,
+
+    @Column(name = "stock", nullable = false)
     private var stock: Int,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "coupon_status", nullable = false)
     private var couponStatus: CouponStatus,
 ) {
     companion object {

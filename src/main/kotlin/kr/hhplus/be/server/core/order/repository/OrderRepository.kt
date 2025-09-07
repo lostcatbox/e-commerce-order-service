@@ -20,9 +20,4 @@ interface OrderRepository {
      * 사용자 ID로 주문 목록 조회
      */
     fun findByUserId(userId: Long): List<Order>
-
-    /**
-     * 다음 주문 ID 생성
-     */
-    fun generateNextOrderId(): Long
 }

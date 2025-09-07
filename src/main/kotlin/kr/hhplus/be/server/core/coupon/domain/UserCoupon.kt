@@ -1,15 +1,31 @@
 package kr.hhplus.be.server.core.coupon.domain
 
+import jakarta.persistence.*
+
 /**
  * 유저 쿠폰 도메인 모델
  */
+@Entity
+@Table(name = "user_coupon")
 class UserCoupon(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_coupon_id")
+    val userCouponId: Long = 0L,
+    @Column(name = "user_id", nullable = false)
     val userId: Long,
+    @Column(name = "coupon_id", nullable = false)
     val couponId: Long,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     private var status: UserCouponStatus,
-    val issuedAt: Long = System.currentTimeMillis(),
-    private var usedAt: Long? = null,
 ) {
+    @Column(name = "issued_at", nullable = false)
+    val issuedAt: Long = System.currentTimeMillis()
+
+    @Column(name = "used_at")
+    private var usedAt: Long? = null
+
     companion object {
         /**
          * 쿠폰 발급
@@ -28,7 +44,6 @@ class UserCoupon(
                 userId = userId,
                 couponId = couponId,
                 status = UserCouponStatus.ISSUED,
-                issuedAt = System.currentTimeMillis(),
             )
         }
     }

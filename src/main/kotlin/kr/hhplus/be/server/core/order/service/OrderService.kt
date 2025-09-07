@@ -1,10 +1,9 @@
 package kr.hhplus.be.server.core.order.service
 
-import kr.hhplus.be.server.core.order.domain.CreateOrderCommand
 import kr.hhplus.be.server.core.order.domain.Order
-import kr.hhplus.be.server.core.order.domain.OrderItem
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
+import kr.hhplus.be.server.core.order.service.dto.*
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,34 +18,33 @@ class OrderService(
     private val productRepository: ProductRepository,
 ) : OrderServiceInterface {
     /**
-     * 주문 생성
+     * 주문 생성 (Aggregate Root 패턴)
      */
     @Transactional
     override fun createOrder(command: CreateOrderCommand): Order {
-        // 상품 정보 조회 및 주문 상품 생성
-        val orderItems =
-            command.orderItems.map { orderItemCommand ->
-                val product =
-                    productRepository.findByProductId(orderItemCommand.productId)
-                        ?: throw IllegalArgumentException("존재하지 않는 상품입니다. 상품 ID: ${orderItemCommand.productId}")
-
-                OrderItem(
-                    productId = orderItemCommand.productId,
-                    quantity = orderItemCommand.quantity,
-                    unitPrice = product.price,
-                )
-            }
-
-        // 주문 생성
-        val orderId = orderRepository.generateNextOrderId()
+        // 주문 생성 (Aggregate Root)
         val order =
             Order(
-                orderId = orderId,
                 userId = command.userId,
-                orderItems = orderItems,
-                orderStatus = OrderStatus.REQUESTED,
                 usedCouponId = command.usedCouponId,
             )
+
+        // 상품 정보 조회 및 주문 상품 추가 (Order를 통해서만 추가)
+        command.orderItems.forEach { orderItemCommand ->
+            val product =
+                productRepository.findByProductId(orderItemCommand.productId)
+                    ?: throw IllegalArgumentException("존재하지 않는 상품입니다. 상품 ID: ${orderItemCommand.productId}")
+
+            // Order Aggregate Root를 통해 OrderItem 추가
+            order.addOrderItem(
+                productId = orderItemCommand.productId,
+                quantity = orderItemCommand.quantity,
+                unitPrice = product.price,
+            )
+        }
+
+        // 주문이 비어있는지 검증
+        order.validNotEmptyOrderItems()
 
         return orderRepository.save(order)
     }
