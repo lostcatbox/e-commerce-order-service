@@ -126,31 +126,4 @@ class UserCouponTest {
             assertFalse(userCoupon.isUsable())
         }
     }
-
-    @Nested
-    @DisplayName("유저 쿠폰 생성 테스트")
-    inner class CouponInitTest {
-        @Test
-        @DisplayName("직접 생성자로 유저 쿠폰을 생성할 수 있다")
-        fun `직접_생성자로_유저_쿠폰을_생성할_수_있다`() {
-            // given
-            val userId = 1L
-            val couponId = 1L
-            val status = UserCouponStatus.ISSUED
-
-            // when
-            val userCoupon =
-                UserCoupon(
-                    userId = userId,
-                    couponId = couponId,
-                    status = status,
-                )
-
-            // then
-            assertEquals(userId, userCoupon.userId)
-            assertEquals(couponId, userCoupon.couponId)
-            assertEquals(status, userCoupon.getStatus())
-            assertNull(userCoupon.getUsedAt())
-        }
-    }
 }

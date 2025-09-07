@@ -135,16 +135,6 @@ class CouponServiceTest {
         assertTrue(exception.message!!.contains("존재하지 않는 쿠폰입니다"))
 
         verify(couponRepository).findByCouponId(couponId)
-        verify(couponRepository, never()).save(any())
+        verify(couponRepository, times(0)).save(any())
     }
-
-
-
-
-
-
-
-
-
-
 }
