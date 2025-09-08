@@ -14,5 +14,8 @@ class CouponRepositoryImpl(
 ) : CouponRepository {
     override fun findByCouponId(couponId: Long): Coupon? = jpaCouponRepository.findByCouponId(couponId)
 
+    override fun findByCouponIdWithPessimisticLock(couponId: Long): Coupon? =
+        jpaCouponRepository.findWithPerssimisticLockByCouponId(couponId)
+
     override fun save(coupon: Coupon): Coupon = jpaCouponRepository.save(coupon)
 }

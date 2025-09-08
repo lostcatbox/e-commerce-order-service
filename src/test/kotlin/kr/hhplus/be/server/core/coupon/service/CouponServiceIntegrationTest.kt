@@ -14,9 +14,10 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.transaction.annotation.Transactional
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @DisplayName("CouponService 통합 테스트")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -151,37 +152,37 @@ class CouponServiceIntegrationTest : IntegrationTestSupport() {
 
         val threadCount = 8 // 재고보다 많은 스레드
         val executor = Executors.newFixedThreadPool(threadCount)
-        val results = mutableListOf<CompletableFuture<Boolean>>()
+        val latch = CountDownLatch(threadCount) // 8개 작업 완료를 기다림
+        val successCount = AtomicInteger(0)
+        val failureCount = AtomicInteger(0)
 
         // when - 동시에 쿠폰 발급 시도
         repeat(threadCount) {
-            val future =
-                CompletableFuture.supplyAsync({
-                    try {
-                        couponService.issueCoupon(concurrentCoupon.couponId)
-                        true // 성공
-                    } catch (e: Exception) {
-                        false // 실패
-                    }
-                }, executor)
-            results.add(future)
+            executor.submit {
+                try {
+                    couponService.issueCoupon(concurrentCoupon.couponId)
+                    successCount.incrementAndGet()
+                } catch (e: Exception) {
+                    failureCount.incrementAndGet()
+                    println("쿠폰 발급 실패: ${e.message})")
+                } finally {
+                    latch.countDown()
+                }
+            }
         }
 
         // 모든 작업 완료 대기
-        val completedResults = results.map { it.get() }
+        // 모든 작업 완료 대기 (최대 30초)
+        val completed = latch.await(30, TimeUnit.SECONDS)
+        if (!completed) {
+            println("30초 내에 모든 작업이 완료되지 않았습니다!")
+        }
         executor.shutdown()
-
         // then
-        val successCount = completedResults.count { it }
-        val failureCount = completedResults.count { !it }
 
         // 성공한 발급 수는 재고 수와 같아야 함
-        assertEquals(5, successCount)
-        assertEquals(3, failureCount)
-
-        // 영속성 컨텍스트 초기화 commit 및 초기화
-        entityManager.flush()
-        entityManager.clear()
+        assertEquals(5, successCount.toInt())
+        assertEquals(3, failureCount.toInt())
 
         // 최종 재고 확인
         val finalCoupon = couponRepository.findByCouponId(concurrentCoupon.couponId)
