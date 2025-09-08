@@ -13,7 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @DisplayName("PointService 통합 테스트")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -270,49 +273,91 @@ class PointServiceIntegrationTest : IntegrationTestSupport() {
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 여러 스레드에서 동시에 포인트 사용")
-    fun `동시성 테스트 여러 스레드에서 동시에 포인트 사용`() {
-        // given - 충분한 포인트 충전
-        pointService.chargePoint(testUserId, 100000L) // 총 150,000원
+    @DisplayName("동시성 테스트 - 여러 스레드에서 동시에 포인트 충전(낙관적락 적용됨)(기대값 : 5번 동시 요청 시 실패없이 성공)")
+    fun `동시성 테스트 여러 스레드에서 동시에 포인트 충전 (낙관적락 적용됨) (5번 동시 요청 시 실패없이 성공)`() {
+        val beforeChargingPoint = testUserPoint.getBalance()
 
-        val threadCount = 10
-        val useAmountPerThread = 10000L // 스레드당 10,000원 사용
+        val threadCount = 5
+        val chargeAmountPerThread = 10000L // 스레드당 10,000원 충전
         val executor = Executors.newFixedThreadPool(threadCount)
-        val results = mutableListOf<CompletableFuture<Boolean>>()
+        val countDownLatch = CountDownLatch(threadCount)
+        val successCount = AtomicInteger(0)
+        val failureCount = AtomicInteger(0)
 
-        // when - 동시에 포인트 사용 시도
+        // when - 동시에 포인트 충전 시도
         repeat(threadCount) {
-            val future =
-                CompletableFuture.supplyAsync({
-                    try {
-                        pointService.usePoint(testUserId, useAmountPerThread)
-                        true // 성공
-                    } catch (e: Exception) {
-                        false // 실패
-                    }
-                }, executor)
-            results.add(future)
+            executor.submit {
+                try {
+                    pointService.chargePoint(testUserId, chargeAmountPerThread)
+                    successCount.incrementAndGet()
+                } catch (e: Exception) {
+                    failureCount.incrementAndGet()
+                } finally {
+                    countDownLatch.countDown()
+                }
+            }
         }
-
         // 모든 작업 완료 대기
-        val completedResults = results.map { it.get() }
+        countDownLatch.await()
+        val completed = countDownLatch.await(30, TimeUnit.SECONDS)
+        if (!completed) {
+            println("30초 내에 모든 작업이 완료되지 않았습니다!")
+        }
         executor.shutdown()
 
         // then
-        val successCount = completedResults.count { it }
-        val failureCount = completedResults.count { !it }
+        // 포인트 충전 요청은 최종적으로 전부 성공해야함.
+        assertTrue(successCount.toInt() == threadCount)
+        assertTrue(failureCount.toInt() == 0)
 
+        // 최종 잔액 확인 (성공한 만큼만 충전 되어야 함)
+        val finalUserPoint = userPointRepository.findByUserId(testUserId)
+        val expectedBalance = beforeChargingPoint + (threadCount * chargeAmountPerThread)
+        assertEquals(expectedBalance, finalUserPoint!!.getBalance())
+    }
+
+    @Test
+    @DisplayName("동시성 테스트 - 여러 스레드에서 동시에 포인트 사용(베타락 적용됨)(단, 한번의 시도로 성공)")
+    fun `동시성 테스트 여러 스레드에서 동시에 포인트 사용(베타락 적용됨)(단, 한번의 시도로 성공)`() {
+        // given - 충분한 포인트 충전
+        pointService.chargePoint(testUserId, 100000L) // 총 150,000원
+
+        val threadCount = 20
+        val useAmountPerThread = 10000L // 스레드당 10,000원 사용
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val countDownLatch = CountDownLatch(threadCount)
+        val successCount = AtomicInteger(0)
+        val failureCount = AtomicInteger(0)
+
+        // when - 동시에 포인트 사용 시도
+        repeat(threadCount) {
+            executor.submit {
+                try {
+                    pointService.usePoint(testUserId, useAmountPerThread)
+                    successCount.incrementAndGet()
+                } catch (e: Exception) {
+                    failureCount.incrementAndGet()
+                } finally {
+                    countDownLatch.countDown()
+                }
+            }
+        }
+
+        // 모든 작업 완료 대기
+        val completed = countDownLatch.await(60, TimeUnit.SECONDS)
+        if (!completed) {
+            println("60초 내에 모든 작업이 완료되지 않았습니다!")
+        }
+        executor.shutdown()
+
+        // then
         // 일부는 성공하고 일부는 실패해야 함 (잔액 부족으로)
-        assertTrue(successCount > 0)
-        assertTrue(failureCount > 0)
-
-        // 영속성 컨텍스트 초기화commit 및 초기화
-        entityManager.flush()
-        entityManager.clear()
+        assertTrue(successCount.toInt() == 15) // 150,000 / 10,000 = 15번 성공
+        assertTrue(failureCount.toInt() == 5) // 나머지 5번은 실패
 
         // 최종 잔액 확인 (성공한 만큼만 차감되어야 함)
         val finalUserPoint = userPointRepository.findByUserId(testUserId)
-        val expectedBalance = 150000L - (successCount * useAmountPerThread)
+        val expectedBalance = 0L // 150,000 - (15 * 10,000) = 0
         assertEquals(expectedBalance, finalUserPoint!!.getBalance())
     }
 
