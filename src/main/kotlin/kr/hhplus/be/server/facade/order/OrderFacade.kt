@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.facade.order
 
-import kr.hhplus.be.server.controller.order.dto.OrderItemInfo
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
 import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
 import kr.hhplus.be.server.core.order.domain.Order
@@ -12,6 +11,7 @@ import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.product.service.ProductSaleService
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import kr.hhplus.be.server.core.user.service.UserServiceInterface
+import kr.hhplus.be.server.facade.order.dto.OrderCriteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.controller.order.dto
 
-import kr.hhplus.be.server.facade.order.OrderCriteria
-import kr.hhplus.be.server.facade.order.OrderItemCriteria
+import kr.hhplus.be.server.facade.order.dto.OrderCriteria
+import kr.hhplus.be.server.facade.order.dto.OrderItemCriteria
 
 /**
  * 주문 생성 요청

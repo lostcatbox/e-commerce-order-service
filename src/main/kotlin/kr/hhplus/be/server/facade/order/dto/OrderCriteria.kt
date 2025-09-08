@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.facade.order
+package kr.hhplus.be.server.facade.order.dto
 
 import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
 import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
