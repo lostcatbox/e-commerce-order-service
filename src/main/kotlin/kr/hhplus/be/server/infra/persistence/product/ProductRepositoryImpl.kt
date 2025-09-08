@@ -17,5 +17,8 @@ class ProductRepositoryImpl(
 ) : ProductRepository {
     override fun findByProductId(productId: Long): Product? = jpaProductRepository.findByProductId(productId)
 
+    override fun findByProductIdWithPessimisticLock(productId: Long): Product? =
+        jpaProductRepository.findWithPessimisticLockByProductId(productId) // 비관적 락
+
     override fun save(product: Product): Product = jpaProductRepository.save(product)
 }
