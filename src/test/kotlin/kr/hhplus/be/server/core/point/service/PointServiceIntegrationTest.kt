@@ -298,7 +298,6 @@ class PointServiceIntegrationTest : IntegrationTestSupport() {
             }
         }
         // 모든 작업 완료 대기
-        countDownLatch.await()
         val completed = countDownLatch.await(30, TimeUnit.SECONDS)
         if (!completed) {
             println("30초 내에 모든 작업이 완료되지 않았습니다!")
