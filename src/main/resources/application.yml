@@ -29,3 +29,7 @@ spring:
     url: jdbc:mysql://localhost:3309/e_commerce_db?characterEncoding=UTF-8&serverTimezone=UTC
     username: application
     password: application
+
+logging:
+    level:
+        com.example.demo1.DemoService: debug
