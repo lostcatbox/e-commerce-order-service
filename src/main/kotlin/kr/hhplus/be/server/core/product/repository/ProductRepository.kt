@@ -14,6 +14,13 @@ interface ProductRepository {
     fun findByProductId(productId: Long): Product?
 
     /**
+     * 상품 ID로 상품 조회 (베타락)
+     * @param productId 상품 ID
+     * @return 상품 정보, 존재하지 않으면 null
+     */
+    fun findByProductIdWithPessimisticLock(productId: Long): Product?
+
+    /**
      * 상품 정보 저장/업데이트
      * @param product 저장할 상품 정보
      * @return 저장된 상품 정보

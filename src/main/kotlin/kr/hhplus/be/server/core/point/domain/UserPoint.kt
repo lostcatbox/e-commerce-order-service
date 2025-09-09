@@ -12,6 +12,10 @@ class UserPoint(
     @Column(name = "user_id")
     val userId: Long,
 ) {
+    @Version
+    @Column(name = "version", nullable = false)
+    private var version: Long = 0L
+
     @Column(name = "balance", nullable = false)
     private var balance: Long = 0L
 

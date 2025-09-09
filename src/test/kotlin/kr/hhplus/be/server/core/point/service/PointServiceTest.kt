@@ -2,8 +2,8 @@ package kr.hhplus.be.server.core.point.service
 
 import kr.hhplus.be.server.core.point.domain.UserPoint
 import kr.hhplus.be.server.core.point.repository.UserPointRepository
-import kr.hhplus.be.server.core.point.service.PointService
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -12,11 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.clearInvocations
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 
 @ExtendWith(MockitoExtension::class)
 @DisplayName("PointService 비즈니스 로직 테스트")
@@ -91,7 +87,7 @@ class PointServiceTest {
         val expectedChargedUserPoint = UserPoint(userId)
         expectedChargedUserPoint.charge(80000L)
 
-        whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
+        whenever(userPointRepository.findByUserIdWithOptimisticLock(userId)).thenReturn(existingUserPoint)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
 
         // when
@@ -101,7 +97,7 @@ class PointServiceTest {
         assertEquals(80000L, result.getBalance())
         assertEquals(userId, result.userId)
 
-        verify(userPointRepository).findByUserId(userId)
+        verify(userPointRepository).findByUserIdWithOptimisticLock(userId)
         verify(userPointRepository).save(any<UserPoint>())
     }
 
@@ -114,7 +110,7 @@ class PointServiceTest {
         val expectedChargedUserPoint = UserPoint(userId)
         expectedChargedUserPoint.charge(30000L)
 
-        whenever(userPointRepository.findByUserId(userId)).thenReturn(null)
+        whenever(userPointRepository.findByUserIdWithOptimisticLock(userId)).thenReturn(null)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
 
         // when
@@ -124,7 +120,7 @@ class PointServiceTest {
         assertEquals(30000L, result.getBalance())
         assertEquals(userId, result.userId)
 
-        verify(userPointRepository).findByUserId(userId)
+        verify(userPointRepository).findByUserIdWithOptimisticLock(userId)
         verify(userPointRepository).save(any<UserPoint>())
     }
 
@@ -154,7 +150,7 @@ class PointServiceTest {
         val existingUserPoint = UserPoint(userId)
         existingUserPoint.charge(50000L)
 
-        whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
+        whenever(userPointRepository.findByUserIdWithOptimisticLock(userId)).thenReturn(existingUserPoint)
 
         // when & then
         val exception =
@@ -162,7 +158,7 @@ class PointServiceTest {
                 pointService.chargePoint(userId, invalidChargeAmount)
             }
         assertTrue(exception.message!!.contains("충전 금액은 1 이상이어야 합니다"))
-        verify(userPointRepository).findByUserId(userId)
+        verify(userPointRepository).findByUserIdWithOptimisticLock(userId)
         verify(userPointRepository, never()).save(any())
     }
 
@@ -175,7 +171,7 @@ class PointServiceTest {
         val existingUserPoint = UserPoint(userId)
         existingUserPoint.charge(1900000L)
 
-        whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
+        whenever(userPointRepository.findByUserIdWithOptimisticLock(userId)).thenReturn(existingUserPoint)
 
         // when & then
         val exception =
@@ -183,7 +179,7 @@ class PointServiceTest {
                 pointService.chargePoint(userId, chargeAmount)
             }
         assertTrue(exception.message!!.contains("잔액이 2000000 초과할 수 없습니다"))
-        verify(userPointRepository).findByUserId(userId)
+        verify(userPointRepository).findByUserIdWithOptimisticLock(userId)
         verify(userPointRepository, never()).save(any())
     }
 
@@ -197,7 +193,7 @@ class PointServiceTest {
         val expectedChargedUserPoint = UserPoint(userId)
         expectedChargedUserPoint.charge(maxChargeAmount)
 
-        whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
+        whenever(userPointRepository.findByUserIdWithOptimisticLock(userId)).thenReturn(existingUserPoint)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
 
         // when
@@ -218,7 +214,7 @@ class PointServiceTest {
         val expectedChargedUserPoint = UserPoint(userId)
         expectedChargedUserPoint.charge(minChargeAmount)
 
-        whenever(userPointRepository.findByUserId(userId)).thenReturn(existingUserPoint)
+        whenever(userPointRepository.findByUserIdWithOptimisticLock(userId)).thenReturn(existingUserPoint)
         whenever(userPointRepository.save(any<UserPoint>())).thenReturn(expectedChargedUserPoint)
 
         // when

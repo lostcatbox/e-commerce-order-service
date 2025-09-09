@@ -14,6 +14,13 @@ interface CouponRepository {
     fun findByCouponId(couponId: Long): Coupon?
 
     /**
+     * 쿠폰 ID로 쿠폰 조회 (베타락)
+     * @param couponId 쿠폰 ID
+     * @return Coupon 또는 null (쿠폰이 존재하지 않는 경우)
+     */
+    fun findByCouponIdWithPessimisticLock(couponId: Long): Coupon?
+
+    /**
      * 쿠폰 저장/업데이트
      * @param coupon 저장할 쿠폰
      * @return 저장된 Coupon

@@ -32,9 +32,9 @@ CouponService(
     override fun issueCoupon(couponId: Long): Coupon {
         validateCouponId(couponId)
 
-        // 쿠폰 조회
+        // 쿠폰 조회 (베타락)
         val coupon =
-            couponRepository.findByCouponId(couponId)
+            couponRepository.findByCouponIdWithPessimisticLock(couponId)
                 ?: throw IllegalArgumentException("존재하지 않는 쿠폰입니다. 쿠폰 ID: $couponId")
 
         // 도메인 로직을 통한 쿠폰 발급 (재고 차감)

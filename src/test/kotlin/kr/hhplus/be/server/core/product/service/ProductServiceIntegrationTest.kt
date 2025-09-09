@@ -14,6 +14,10 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.transaction.annotation.Transactional
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @DisplayName("ProductService 통합 테스트")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -40,8 +44,6 @@ class ProductServiceIntegrationTest : IntegrationTestSupport() {
                 stock = 100,
             )
         productRepository.save(testProduct)
-        entityManager.flush()
-        entityManager.clear()
     }
 
     @Test
@@ -215,5 +217,63 @@ class ProductServiceIntegrationTest : IntegrationTestSupport() {
             }
 
         assertTrue(exception.message!!.contains("주문 상품은 1개 이상이어야 합니다"))
+    }
+
+    @Test
+    @DisplayName("동시성 테스트 - 여러 스레드에서 동시에 상품 재고 차감 (재고 10개, 20번 동시 요청)")
+    fun `동시성 테스트 여러 스레드에서 동시에 상품 재고 차감 (재고 10개 20번 동시 요청)`() {
+        // given - 재고 10개인 상품 생성
+        val concurrencyTestProduct =
+            Product(
+                productId = 100L,
+                name = "동시성 테스트 상품",
+                description = "재고 10개 테스트용 상품",
+                price = 5000L,
+                stock = 10, // 재고 10개
+            )
+        productRepository.save(concurrencyTestProduct)
+
+        val threadCount = 20 // 20번 동시 요청
+        val requestQuantity = 1 // 각 요청마다 1개씩 차감
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val countDownLatch = CountDownLatch(threadCount)
+        val successCount = AtomicInteger(0)
+        val failureCount = AtomicInteger(0)
+
+        // when - 동시에 상품 재고 차감 시도
+        repeat(threadCount) {
+            executor.submit {
+                try {
+                    val orderItems = listOf(OrderItemCommand(concurrencyTestProduct.productId, requestQuantity))
+                    val command = SaleProductsCommand(orderItems)
+                    productService.saleOrderProducts(command)
+                    successCount.incrementAndGet()
+                } catch (e: Exception) {
+                    failureCount.incrementAndGet()
+                    println("상품 재고 차감 실패: ${e.message}")
+                } finally {
+                    countDownLatch.countDown()
+                }
+            }
+        }
+
+        // 모든 작업 완료 대기 (최대 30초)
+        val completed = countDownLatch.await(30, TimeUnit.SECONDS)
+        if (!completed) {
+            println("30초 내에 모든 작업이 완료되지 않았습니다!")
+        }
+        executor.shutdown()
+
+        // then
+        println("성공한 재고 차감: ${successCount.get()}, 실패한 재고 차감: ${failureCount.get()}")
+
+        // 성공한 재고 차감은 정확히 재고 수만큼이어야 함
+        assertEquals(10, successCount.toInt()) // 재고 10개 → 10번 성공
+        assertEquals(10, failureCount.toInt()) // 나머지 10번은 재고 부족으로 실패
+
+        // 최종 재고 확인 (0이어야 함)
+        val finalProduct = productRepository.findByProductId(concurrencyTestProduct.productId)
+        assertNotNull(finalProduct)
+        assertEquals(0, finalProduct!!.getStock()) // 10개 모두 차감되어 0개
     }
 }

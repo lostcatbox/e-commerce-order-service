@@ -39,7 +39,7 @@ class ProductService(
 
             // 상품 조회
             val product =
-                productRepository.findByProductId(orderItemCommand.productId)
+                productRepository.findByProductIdWithPessimisticLock(orderItemCommand.productId)
                     ?: throw IllegalArgumentException("존재하지 않는 상품입니다. 상품 ID: ${orderItemCommand.productId}")
 
             // 재고 충분한지 확인

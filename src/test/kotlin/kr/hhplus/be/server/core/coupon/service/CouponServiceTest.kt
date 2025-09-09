@@ -108,7 +108,7 @@ class CouponServiceTest {
                 couponStatus = CouponStatus.OPENED,
             )
 
-        whenever(couponRepository.findByCouponId(couponId)).thenReturn(originalCoupon)
+        whenever(couponRepository.findByCouponIdWithPessimisticLock(couponId)).thenReturn(originalCoupon)
         whenever(couponRepository.save(any<Coupon>())).thenReturn(updatedCoupon)
 
         // when
@@ -116,7 +116,7 @@ class CouponServiceTest {
 
         // then
         assertEquals(updatedCoupon, result)
-        verify(couponRepository).findByCouponId(couponId)
+        verify(couponRepository).findByCouponIdWithPessimisticLock(couponId)
         verify(couponRepository).save(originalCoupon)
     }
 
@@ -125,7 +125,7 @@ class CouponServiceTest {
     fun `존재하지 않는 쿠폰으로 재고 차감 시 예외 발생`() {
         // given
         val couponId = 999L
-        whenever(couponRepository.findByCouponId(couponId)).thenReturn(null)
+        whenever(couponRepository.findByCouponIdWithPessimisticLock(couponId)).thenReturn(null)
 
         // when & then
         val exception =
@@ -134,7 +134,7 @@ class CouponServiceTest {
             }
         assertTrue(exception.message!!.contains("존재하지 않는 쿠폰입니다"))
 
-        verify(couponRepository).findByCouponId(couponId)
+        verify(couponRepository).findByCouponIdWithPessimisticLock(couponId)
         verify(couponRepository, times(0)).save(any())
     }
 }

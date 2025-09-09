@@ -2,6 +2,9 @@ package kr.hhplus.be.server.core.point.service
 
 import kr.hhplus.be.server.core.point.domain.UserPoint
 import kr.hhplus.be.server.core.point.repository.UserPointRepository
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -28,6 +31,11 @@ class PointService(
      * 사용자 포인트 충전
      */
     @Transactional
+    @Retryable(
+        maxAttempts = 3,
+        backoff = Backoff(delay = 1000, multiplier = 2.0),
+        include = [ObjectOptimisticLockingFailureException::class],
+    )
     override fun chargePoint(
         userId: Long,
         amount: Long,
@@ -36,7 +44,7 @@ class PointService(
 
         // 기존 포인트 조회 (없으면 0으로 초기화)
         val currentUserPoint =
-            userPointRepository.findByUserId(userId)
+            userPointRepository.findByUserIdWithOptimisticLock(userId)
                 ?: UserPoint(userId = userId)
 
         // 도메인 로직을 통한 포인트 충전
@@ -58,7 +66,7 @@ class PointService(
 
         // 기존 포인트 조회
         val currentUserPoint =
-            userPointRepository.findByUserId(userId)
+            userPointRepository.findByUserIdWithPessimisticLock(userId)
                 ?: throw IllegalArgumentException("존재하지 않는 사용자의 포인트입니다. 사용자 ID: $userId")
 
         // 도메인 로직을 통한 포인트 사용
