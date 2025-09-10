@@ -24,7 +24,7 @@ interface UserPointRepository {
     fun findByUserIdWithOptimisticLock(userId: Long): UserPoint?
 
     /**
-     * 사용자 포인트 조회 (비관적 락)
+     * 사용자 포인트 조회
      * @param userId 사용자 ID
      * @return UserPoint 또는 null (사용자가 존재하지 않는 경우)
      */

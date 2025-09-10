@@ -17,7 +17,7 @@ interface JpaProductRepository : JpaRepository<Product, Long> {
     fun findByProductId(productId: Long): Product?
 
     /**
-     * 상품 ID로 상품 조회 (비관적 락)
+     * 상품 ID로 상품 조회
      * @param productId 상품 ID
      * @return Product 또는 null
      */
