@@ -2,9 +2,7 @@ package kr.hhplus.be.server.core.point.service
 
 import kr.hhplus.be.server.core.point.domain.UserPoint
 import kr.hhplus.be.server.core.point.repository.UserPointRepository
-import org.springframework.orm.ObjectOptimisticLockingFailureException
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import kr.hhplus.be.server.support.lock.DistributedLockManagerInterface
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -12,9 +10,9 @@ import org.springframework.transaction.annotation.Transactional
  * 포인트 서비스 구현체
  */
 @Service
-@Transactional
 class PointService(
     private val userPointRepository: UserPointRepository,
+    private val distributedLockManager: DistributedLockManagerInterface,
 ) : PointServiceInterface {
     /**
      * 사용자 포인트 잔액 조회
@@ -29,51 +27,54 @@ class PointService(
 
     /**
      * 사용자 포인트 충전
+     * 분산락을 사용하여 동시성 제어
      */
-    @Transactional
-    @Retryable(
-        maxAttempts = 3,
-        backoff = Backoff(delay = 1000, multiplier = 2.0),
-        include = [ObjectOptimisticLockingFailureException::class],
-    )
     override fun chargePoint(
         userId: Long,
         amount: Long,
     ): UserPoint {
         validateUserId(userId)
 
-        // 기존 포인트 조회 (없으면 0으로 초기화)
-        val currentUserPoint =
-            userPointRepository.findByUserIdWithOptimisticLock(userId)
-                ?: UserPoint(userId = userId)
+        val lockKey = distributedLockManager.getUserPointLockKey(userId)
 
-        // 도메인 로직을 통한 포인트 충전
-        currentUserPoint.charge(amount)
+        return distributedLockManager.executeWithLock(lockKey, 5L, 10L) {
+            // 기존 포인트 조회 (없으면 0으로 초기화)
+            val currentUserPoint =
+                userPointRepository.findByUserId(userId)
+                    ?: UserPoint(userId = userId)
 
-        // 충전된 포인트 저장
-        return userPointRepository.save(currentUserPoint)
+            // 도메인 로직을 통한 포인트 충전
+            currentUserPoint.charge(amount)
+
+            // 충전된 포인트 저장
+            userPointRepository.save(currentUserPoint)
+        }
     }
 
     /**
      * 사용자 포인트 사용
+     * 분산락을 사용하여 동시성 제어
      */
-    @Transactional
     override fun usePoint(
         userId: Long,
         amount: Long,
     ): UserPoint {
         validateUserId(userId)
 
-        // 기존 포인트 조회
-        val currentUserPoint =
-            userPointRepository.findByUserIdWithPessimisticLock(userId)
-                ?: throw IllegalArgumentException("존재하지 않는 사용자의 포인트입니다. 사용자 ID: $userId")
+        val lockKey = distributedLockManager.getUserPointLockKey(userId)
 
-        // 도메인 로직을 통한 포인트 사용
-        currentUserPoint.use(amount)
+        return distributedLockManager.executeWithLock(lockKey, 5L, 10L) {
+            // 기존 포인트 조회
+            val currentUserPoint =
+                userPointRepository.findByUserId(userId)
+                    ?: throw IllegalArgumentException("존재하지 않는 사용자의 포인트입니다. 사용자 ID: $userId")
 
-        // 사용된 포인트 저장
-        return userPointRepository.save(currentUserPoint)
+            // 도메인 로직을 통한 포인트 사용
+            currentUserPoint.use(amount)
+
+            // 사용된 포인트 저장
+            userPointRepository.save(currentUserPoint)
+        }
     }
 
     /**

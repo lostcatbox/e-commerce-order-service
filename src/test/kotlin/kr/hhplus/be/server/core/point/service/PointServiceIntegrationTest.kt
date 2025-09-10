@@ -273,8 +273,8 @@ class PointServiceIntegrationTest : IntegrationTestSupport() {
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 여러 스레드에서 동시에 포인트 충전(낙관적락 적용됨)(기대값 : 5번 동시 요청 시 실패없이 성공)")
-    fun `동시성 테스트 여러 스레드에서 동시에 포인트 충전 (낙관적락 적용됨) (5번 동시 요청 시 실패없이 성공)`() {
+    @DisplayName("동시성 테스트 - 여러 스레드에서 동시에 포인트 충전(기대값 : 5번 동시 요청 시 실패없이 성공)")
+    fun `동시성 테스트 여러 스레드에서 동시에 포인트 충전 (5번 동시 요청 시 실패없이 성공)`() {
         val beforeChargingPoint = testUserPoint.getBalance()
 
         val threadCount = 5

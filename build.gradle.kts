@@ -56,6 +56,9 @@ dependencies {
     // DB
     runtimeOnly("com.mysql:mysql-connector-j")
 
+    // Redis & Redisson
+    implementation("org.redisson:redisson-spring-boot-starter:3.24.3")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
