@@ -3,7 +3,7 @@ services:
   mysql:
     image: mysql:8.0
     ports:
-      - "3309:3306"
+      - "3406:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_USER=application
@@ -11,6 +11,22 @@ services:
       - MYSQL_DATABASE=e_commerce_db
     volumes:
       - ./data/mysql/:/var/lib/mysql
+  # 서비스명
+  redis_container:
+    # 사용할 이미지
+    image: redis:latest
+    # 컨테이너명
+    container_name: redis_test
+    # 접근 포트 설정(컨테이너 외부:컨테이너 내부)
+    ports:
+        - 6479:6379
+    # 스토리지 마운트(볼륨) 설정
+    volumes:
+        - ./redis/data:/data
+        - ./redis/conf/redis.conf:/usr/local/conf/redis.conf
+    # 컨테이너 종료시 재시작 여부 설정
+    restart: always
+    command: redis-server /usr/local/conf/redis.conf
 
 networks:
   default:
