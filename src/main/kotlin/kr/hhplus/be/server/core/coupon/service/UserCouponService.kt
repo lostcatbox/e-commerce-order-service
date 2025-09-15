@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional
  * 사용자 쿠폰 서비스 구현체
  */
 @Service
-@Transactional
 class UserCouponService(
     private val userCouponRepository: UserCouponRepository,
 ) : UserCouponServiceInterface {

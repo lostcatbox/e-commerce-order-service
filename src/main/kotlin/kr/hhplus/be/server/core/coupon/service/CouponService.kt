@@ -2,6 +2,7 @@ package kr.hhplus.be.server.core.coupon.service
 
 import kr.hhplus.be.server.core.coupon.domain.Coupon
 import kr.hhplus.be.server.core.coupon.repository.CouponRepository
+import kr.hhplus.be.server.support.lock.DistributedLockManagerInterface
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -9,10 +10,10 @@ import org.springframework.transaction.annotation.Transactional
  * 쿠폰 서비스 구현체 - 쿠폰 도메인만 담당
  */
 @Service
-@Transactional
 class
 CouponService(
     private val couponRepository: CouponRepository,
+    private val distributedLockManager: DistributedLockManagerInterface,
 ) : CouponServiceInterface {
     /**
      * 쿠폰 정보 조회
@@ -28,20 +29,22 @@ CouponService(
     /**
      * 쿠폰 재고 차감 (발급 시)
      */
-    @Transactional
     override fun issueCoupon(couponId: Long): Coupon {
         validateCouponId(couponId)
 
-        // 쿠폰 조회 (베타락)
-        val coupon =
-            couponRepository.findByCouponIdWithPessimisticLock(couponId)
-                ?: throw IllegalArgumentException("존재하지 않는 쿠폰입니다. 쿠폰 ID: $couponId")
+        val lockKey = "lock:coupon-issue:$couponId"
+        return distributedLockManager.executeWithLock(lockKey) {
+            // 쿠폰 조회 (베타락)
+            val coupon =
+                couponRepository.findByCouponIdWithPessimisticLock(couponId)
+                    ?: throw IllegalArgumentException("존재하지 않는 쿠폰입니다. 쿠폰 ID: $couponId")
 
-        // 도메인 로직을 통한 쿠폰 발급 (재고 차감)
-        coupon.issueCoupon()
+            // 도메인 로직을 통한 쿠폰 발급 (재고 차감)
+            coupon.issueCoupon()
 
-        // 재고 차감된 쿠폰 저장
-        return couponRepository.save(coupon)
+            // 재고 차감된 쿠폰 저장
+            couponRepository.save(coupon)
+        }
     }
 
     /**

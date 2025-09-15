@@ -31,7 +31,6 @@ class CouponFacade(
     /**
      * 쿠폰 발급 전체 프로세스
      */
-    @Transactional
     fun issueCoupon(
         userId: Long,
         couponId: Long,

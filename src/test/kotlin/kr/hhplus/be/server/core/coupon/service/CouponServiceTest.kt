@@ -3,6 +3,8 @@ package kr.hhplus.be.server.core.coupon.service
 import kr.hhplus.be.server.core.coupon.domain.Coupon
 import kr.hhplus.be.server.core.coupon.domain.CouponStatus
 import kr.hhplus.be.server.core.coupon.repository.CouponRepository
+import kr.hhplus.be.server.fake.lock.FakeDistributedLockManager
+import kr.hhplus.be.server.support.lock.DistributedLockManagerInterface
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -20,12 +22,16 @@ class CouponServiceTest {
     @Mock
     private lateinit var couponRepository: CouponRepository
 
+    @Mock
+    private lateinit var distributedLockManager: DistributedLockManagerInterface
+
     @InjectMocks
     private lateinit var couponService: CouponService
 
     @BeforeEach
     fun setup() {
-        clearInvocations(couponRepository)
+        distributedLockManager = FakeDistributedLockManager()
+        couponService = CouponService(couponRepository, distributedLockManager)
     }
 
     @Test
@@ -136,5 +142,22 @@ class CouponServiceTest {
 
         verify(couponRepository).findByCouponIdWithPessimisticLock(couponId)
         verify(couponRepository, times(0)).save(any())
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 쿠폰 ID로 재고 차감 시 예외 발생")
+    fun `유효하지 않은 쿠폰 ID로 재고 차감 시 예외 발생`() {
+        // given
+        val invalidCouponId = -1L
+
+        // when & then
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                couponService.issueCoupon(invalidCouponId)
+            }
+        assertTrue(exception.message!!.contains("쿠폰 ID는 0보다 커야 합니다"))
+
+        verify(couponRepository, never()).findByCouponIdWithPessimisticLock(any())
+        verify(couponRepository, never()).save(any())
     }
 }
