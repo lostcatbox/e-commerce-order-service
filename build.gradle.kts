@@ -50,14 +50,21 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework:spring-aspects")
 
     // DB
     runtimeOnly("com.mysql:mysql-connector-j")
 
-    // Redis & Redisson
+    // Redisson (분산 락)
     implementation("org.redisson:redisson-spring-boot-starter:3.24.3")
+
+    // Spring Data Redis (캐싱)
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+    // Jackson Kotlin Module (Kotlin용 JSON 도구)
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")

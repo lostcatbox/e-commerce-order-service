@@ -24,6 +24,8 @@ spring:
       hibernate.timezone.default_storage: NORMALIZE_UTC
       hibernate.jdbc.time_zone: UTC
       hibernate.format_sql: true
+  cache:
+    type: none  # 테스트 환경에서는 캐시 비활성화
 
   data:
       redis:
