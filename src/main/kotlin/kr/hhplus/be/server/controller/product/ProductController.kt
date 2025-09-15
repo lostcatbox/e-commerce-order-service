@@ -5,6 +5,7 @@ import kr.hhplus.be.server.core.product.service.ProductSaleServiceInterface
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 /**
  * 상품 유스케이스
@@ -42,7 +43,8 @@ class ProductController(
      */
     @GetMapping("/popular")
     fun getPopularProducts(): ResponseEntity<PopularProductsResponse> {
-        val popularProducts = productSaleService.getPopularProducts()
+        val now = LocalDate.now()
+        val popularProducts = productSaleService.getPopularProducts(now)
 
         val productsInfo =
             popularProducts.map { product ->

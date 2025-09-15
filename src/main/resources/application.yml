@@ -29,6 +29,7 @@ spring:
     url: jdbc:mysql://localhost:3406/e_commerce_db?characterEncoding=UTF-8&serverTimezone=UTC
     username: application
     password: application
+  # Spring-cache에 Redis 설정
   data:
     redis:
       host: localhost
