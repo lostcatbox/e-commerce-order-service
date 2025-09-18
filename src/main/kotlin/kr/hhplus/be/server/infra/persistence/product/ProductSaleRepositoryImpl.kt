@@ -3,46 +3,27 @@ package kr.hhplus.be.server.infra.persistence.product
 import kr.hhplus.be.server.core.product.domain.ProductSale
 import kr.hhplus.be.server.core.product.repository.ProductSaleRepository
 import kr.hhplus.be.server.core.product.service.dto.ProductPeriodSaleDto
-import kr.hhplus.be.server.infra.persistence.product.jpa.JpaProductSaleRepository
+import kr.hhplus.be.server.infra.persistence.product.redis.RedisProductSaleRepository
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 /**
  * 상품 판매량 Repository 구현체
  */
 @Repository
 class ProductSaleRepositoryImpl(
-    private val jpaProductSaleRepository: JpaProductSaleRepository,
+    private val redisProductSaleRepository: RedisProductSaleRepository,
 ) : ProductSaleRepository {
-    override fun findPopularProducts(dateTime: LocalDate): List<ProductSale> {
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val saleDate = dateTime.format(formatter).toLong()
-        return jpaProductSaleRepository.findBySaleDate(saleDate)
-    }
-
     override fun findPopularProductsInfo(
         startDate: LocalDate,
         endDate: LocalDate,
-    ): List<ProductPeriodSaleDto> {
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val startDateLong = startDate.format(formatter).toLong()
-        val endDateLong = endDate.format(formatter).toLong()
-
-        return jpaProductSaleRepository.findPopularProductsInfo(
-            startDate = startDateLong,
-            endDate = endDateLong,
-            limit = 5,
-        )
-    }
+    ): List<ProductPeriodSaleDto> = redisProductSaleRepository.findPopularProductsInfo(startDate, endDate)
 
     /**
      * ProductSale 도메인 객체 저장
      * Infrastructure 계층은 순수하게 데이터 접근만 담당
      */
-    override fun save(productSale: ProductSale): ProductSale {
-        return jpaProductSaleRepository.save(productSale)
-    }
+    override fun save(productSale: ProductSale): ProductSale = redisProductSaleRepository.save(productSale)
 
     /**
      * 상품 ID와 판매 날짜로 ProductSale 조회
@@ -50,7 +31,5 @@ class ProductSaleRepositoryImpl(
     override fun findByProductIdAndSaleDate(
         productId: Long,
         saleDate: Long,
-    ): ProductSale? {
-        return jpaProductSaleRepository.findByProductIdAndSaleDate(productId, saleDate)
-    }
+    ): ProductSale? = redisProductSaleRepository.findByProductIdAndSaleDate(productId, saleDate)
 }
