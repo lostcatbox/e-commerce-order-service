@@ -5,9 +5,10 @@ import kr.hhplus.be.server.core.product.domain.ProductSale
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import kr.hhplus.be.server.core.product.repository.ProductSaleRepository
 import kr.hhplus.be.server.core.product.service.dto.PopularProductDto
-import org.springframework.boot.autoconfigure.cache.CacheType
-import org.springframework.cache.annotation.CacheEvict
+import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -17,48 +18,31 @@ class ProductSaleService(
     private val productSaleRepository: ProductSaleRepository,
     private val productRepository: ProductRepository,
 ) : ProductSaleServiceInterface {
+    companion object {
+        private val log = LoggerFactory.getLogger(ProductSaleService::class.java)
+    }
+
     /**
      * 최근 3일간 가장 많이 팔린 상위 5개 상품 조회
-     * ProductSale 테이블만 사용하여 판매량 집계 후 상품 정보 조회
+     * 캐시에만 의존하며, 캐시 미스 시 빈 결과 반환
      *
-     * @Cacheable: 캐시된 데이터가 있으면 반환, 없으면 DB 조회 후 캐시에 저장
-     * - 캐시 키: "popular_products" (고정 키 사용)
-     * - TTL : 1분
+     * @Cacheable: 캐시된 데이터가 있으면 반환, 없으면 빈 결과 반환
+     * - 캐시 키: "popular_products:top5" (고정 키 사용)
      */
     @Cacheable(
         value = ["popular_products"],
-        key = "'top:5' + ':days:' + #rankDate",
+        key = "'top5'",
     )
     override fun getPopularProducts(rankDate: LocalDate): List<PopularProductDto> {
-        val threeDaysAgo = rankDate.minusDays(3)
-
-        // DB 에서 3일간 판매량을 집계하여 조회 (ProductSale 테이블만 사용)(실시간 데이터 아님)
-        // TODO : Product의 name, description, price 때문에 N+1 문제가 발생 중 -> 반정규화 또는 캐싱 고려
-        return productSaleRepository
-            .findPopularProductsInfo(threeDaysAgo, rankDate)
-            .mapNotNull { salesInfo ->
-                // 각 상품 정보를 별도로 조회
-                productRepository.findByProductId(salesInfo.productId)?.let { product ->
-                    PopularProductDto(
-                        productId = salesInfo.productId,
-                        productName = product.name,
-                        productDescription = product.description,
-                        productPrice = product.price,
-                        totalSales = salesInfo.totalSales,
-                    )
-                }
-            }
+        // 캐시 미스 시 빈 결과 반환
+        log.warn("인기 상품 캐시 미스 발생 - 빈 결과 반환. 배치 프로세스에서 캐시가 곧 갱신됩니다.")
+        return emptyList()
     }
 
     /**
      * 상품 판매량 기록
-     * 기존 판매 데이터가 있으면 수량을 누적하고, 없으면 새로 생성
-     *
-     * @CacheEvict: 판매 데이터가 변경되면 인기 상품 캐시를 무효화
-     * - 판매량이 변경될 때마다 캐시를 삭제하여 최신 데이터 반영
      */
     @Transactional
-    @CacheEvict(value = ["popular_products"], allEntries = true)
     override fun recordProductSale(
         productId: Long,
         quantity: Int,
@@ -70,25 +54,55 @@ class ProductSaleService(
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
         val saleDate = today.format(formatter).toLong()
 
-        // 기존 판매 데이터 조회
-        val existingSale = productSaleRepository.findByProductIdAndSaleDate(productId, saleDate)
-
         val productSale =
-            if (existingSale != null) {
-                // 판매 데이터에 수량 추가
-                existingSale.addSaleQuantity(quantity)
-            } else {
-                // 새 판매 데이터 생성
-                ProductSale.createNewSale(
-                    productId = productId,
-                    saleDate = saleDate,
-                    quantity = quantity,
-                )
-            }
+            ProductSale.createNewSale(
+                productId = productId,
+                saleDate = saleDate,
+                quantity = quantity,
+            )
 
-        // 판매 데이터 저장
         productSaleRepository.save(productSale)
+
+        log.debug("상품 판매량 기록 완료: productId={}, quantity={}", productId, quantity)
     }
+
+    /**
+     * 인기 상품 캐시 갱신 배치 작업
+     * (1분마다 실행되어 Redis Sorted Set에서 최신 데이터를 조회하여 캐시 갱신)
+     */
+    @CachePut(value = ["popular_products"], key = "'top5'")
+    @Scheduled(fixedRate = 3000) // 1분마다 실행
+    fun updatePopularProductsCache(): List<PopularProductDto> =
+        try {
+            val today = LocalDate.now()
+            val threeDaysAgo = today.minusDays(3)
+
+            log.info("인기 상품 캐시 갱신 시작")
+
+            // 최근 3일간 데이터 조회
+            val popularProductsInfo = productSaleRepository.findPopularProductsInfo(threeDaysAgo, today)
+
+            // 상품 정보와 함께 DTO 생성
+            val result =
+                popularProductsInfo.mapNotNull { salesInfo ->
+                    productRepository.findByProductId(salesInfo.productId)?.let { product ->
+                        PopularProductDto(
+                            productId = salesInfo.productId,
+                            productName = product.name,
+                            productDescription = product.description,
+                            productPrice = product.price,
+                            totalSales = salesInfo.totalSales,
+                        )
+                    }
+                }
+
+            log.info("인기 상품 캐시 갱신 완료: {} 개 상품", result.size)
+            result
+        } catch (exception: Exception) {
+            log.error("인기 상품 캐시 갱신 실패", exception)
+            // 실패 시 빈 리스트 반환하여 캐시 무효화 방지
+            emptyList()
+        }
 
     /**
      * 상품 ID 유효성 검증

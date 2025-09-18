@@ -6,12 +6,6 @@ import java.time.LocalDate
 
 interface ProductSaleRepository {
     /**
-     * 해당 연월일 기준으로 인기 상품 목록 전체 조회
-     * @return 인기 상품 목록 (판매량 기준 내림차순)
-     */
-    fun findPopularProducts(dateTime: LocalDate): List<ProductSale>
-
-    /**
      * 특정 기간 동안 상위 판매량 상품 조회 (상위 5개)
      * @param startDate 시작 날짜
      * @param endDate 종료 날짜
