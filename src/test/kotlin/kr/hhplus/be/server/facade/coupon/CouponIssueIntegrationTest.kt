@@ -23,9 +23,9 @@ import org.springframework.transaction.annotation.Transactional
 
 @DisplayName("비동기 쿠폰 발급 통합 테스트")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class CouponAsyncIntegrationTest : IntegrationTestSupport() {
+class CouponIssueIntegrationTest : IntegrationTestSupport() {
     @Autowired
-    private lateinit var couponAsyncFacade: CouponAsyncFacade
+    private lateinit var couponFacade: CouponFacade
 
     @Autowired
     private lateinit var couponIssueFacade: CouponIssueFacade
@@ -88,7 +88,7 @@ class CouponAsyncIntegrationTest : IntegrationTestSupport() {
     @Transactional
     fun `비동기 쿠폰 발급 요청 성공`() {
         // when
-        val response = couponAsyncFacade.requestCouponIssue(testUserId, testCouponId)
+        val response = couponFacade.requestCouponIssue(testUserId, testCouponId)
 
         // then
         assertTrue(response.success)
@@ -97,7 +97,7 @@ class CouponAsyncIntegrationTest : IntegrationTestSupport() {
         assertTrue(response.requestId.isNotBlank())
 
         // 대기열에 추가되었는지 확인
-        val queueSize = couponAsyncFacade.getQueueSize(testCouponId)
+        val queueSize = couponFacade.getQueueSize(testCouponId)
         assertEquals(1L, queueSize)
     }
 
@@ -118,7 +118,7 @@ class CouponAsyncIntegrationTest : IntegrationTestSupport() {
         couponRepository.save(outOfStockCoupon)
 
         // when
-        val response = couponAsyncFacade.requestCouponIssue(testUserId, 999L)
+        val response = couponFacade.requestCouponIssue(testUserId, 999L)
 
         // then
         assertFalse(response.success)
@@ -126,7 +126,7 @@ class CouponAsyncIntegrationTest : IntegrationTestSupport() {
         assertEquals("", response.requestId)
 
         // 대기열에 추가되지 않았는지 확인
-        val queueSize = couponAsyncFacade.getQueueSize(999L)
+        val queueSize = couponFacade.getQueueSize(999L)
         assertEquals(0L, queueSize)
     }
 
@@ -138,7 +138,7 @@ class CouponAsyncIntegrationTest : IntegrationTestSupport() {
         val nonExistentUserId = 999L
 
         // when
-        val response = couponAsyncFacade.requestCouponIssue(nonExistentUserId, testCouponId)
+        val response = couponFacade.requestCouponIssue(nonExistentUserId, testCouponId)
 
         // then
         assertFalse(response.success)

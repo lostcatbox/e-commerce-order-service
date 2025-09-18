@@ -1,11 +1,12 @@
 package kr.hhplus.be.server.controller.coupon
 
 import kr.hhplus.be.server.controller.coupon.dto.CouponInfoResponse
-import kr.hhplus.be.server.controller.coupon.dto.CouponIssueRequest
 import kr.hhplus.be.server.controller.coupon.dto.UserCouponsResponse
+import kr.hhplus.be.server.core.coupon.domain.CouponIssueResponse
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
 import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
 import kr.hhplus.be.server.facade.coupon.CouponFacade
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 /**
@@ -14,9 +15,9 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/coupons")
 class CouponController(
-    private val couponFacade: CouponFacade,
     private val couponService: CouponServiceInterface,
     private val userCouponService: UserCouponServiceInterface,
+    private val couponFacade: CouponFacade,
 ) {
     /**
      * 쿠폰 정보 조회
@@ -32,21 +33,47 @@ class CouponController(
     }
 
     /**
-     * 선착순 쿠폰 발급
-     * @param request 쿠폰 발급 요청
-     * @return 발급된 유저 쿠폰 정보
+     * 쿠폰 발급 요청 (비동기)
+     *
+     * 요청 즉시 성공/실패 응답을 받으며,
+     * 실제 쿠폰 발급은 백그라운드에서 비동기로 처리됩니다.
+     *
+     * @param userId 사용자 ID
+     * @param couponId 쿠폰 ID
+     * @return 발급 요청 응답
      */
-    @PostMapping("/issue")
-    fun issueCoupon(
-        @RequestBody request: CouponIssueRequest,
-    ): UserCouponsResponse.UserCouponInfo {
-        val userCoupon = couponFacade.issueCoupon(request.userId, request.couponId)
-        return UserCouponsResponse.UserCouponInfo(
-            userId = userCoupon.userId,
-            couponId = userCoupon.couponId,
-            status = userCoupon.getStatus(),
-            issuedAt = userCoupon.issuedAt,
-            usedAt = userCoupon.getUsedAt(),
+    @PostMapping("/{couponId}/issue")
+    fun requestCouponIssue(
+        @RequestParam userId: Long,
+        @PathVariable couponId: Long,
+    ): ResponseEntity<CouponIssueResponse> {
+        val response = couponFacade.requestCouponIssue(userId, couponId)
+
+        return if (response.success) {
+            ResponseEntity.ok(response)
+        } else {
+            ResponseEntity.badRequest().body(response)
+        }
+    }
+
+    /**
+     * 쿠폰 발급 대기열 크기 조회
+     *
+     * @param couponId 쿠폰 ID
+     * @return 대기열 크기
+     */
+    @GetMapping("/{couponId}/queue-size")
+    fun getQueueSize(
+        @PathVariable couponId: Long,
+    ): ResponseEntity<Map<String, Any>> {
+        val queueSize = couponFacade.getQueueSize(couponId)
+
+        return ResponseEntity.ok(
+            mapOf(
+                "couponId" to couponId,
+                "queueSize" to queueSize,
+                "message" to "현재 $queueSize 명이 대기 중입니다.",
+            ),
         )
     }
 

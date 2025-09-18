@@ -31,7 +31,7 @@
 
 sequenceDiagram
     participant Client as 클라이언트
-    participant NewFacade as CouponAsyncFacade
+    participant NewFacade as CouponFacade
     participant Redis as Redis 대기열
     participant Scheduler as 쿠폰발급스케줄러
     participant CouponService as CouponService
