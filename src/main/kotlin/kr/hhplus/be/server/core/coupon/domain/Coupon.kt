@@ -11,16 +11,12 @@ class Coupon(
     @Id
     @Column(name = "coupon_id")
     val couponId: Long,
-
     @Column(name = "description", nullable = false)
     val description: String,
-
     @Column(name = "discount_amount", nullable = false)
     val discountAmount: Long,
-
     @Column(name = "stock", nullable = false)
     private var stock: Int,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "coupon_status", nullable = false)
     private var couponStatus: CouponStatus,
@@ -49,6 +45,11 @@ class Coupon(
      * 현재 쿠폰 상태 조회
      */
     fun getCouponStatus(): CouponStatus = couponStatus
+
+    /**
+     * 쿠폰 재고가 있는지 확인
+     */
+    fun hasStock(): Boolean = stock > 0
 
     /**
      * 선착순 쿠폰 발급 (재고 차감)
