@@ -4,4 +4,6 @@ import kr.hhplus.be.server.core.user.domain.User
 
 interface UserRepository {
     fun findByUserId(userId: Long): User?
+
+    fun save(user: User): User
 }
