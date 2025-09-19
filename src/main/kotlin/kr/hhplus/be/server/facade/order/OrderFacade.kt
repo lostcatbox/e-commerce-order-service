@@ -4,11 +4,8 @@ import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
 import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.service.OrderServiceInterface
-import kr.hhplus.be.server.core.order.service.OrderStatisticsService
-import kr.hhplus.be.server.core.order.service.dto.SendOrderStatisticCommand
 import kr.hhplus.be.server.core.payment.service.PaymentServiceInterface
 import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
-import kr.hhplus.be.server.core.product.service.ProductSaleService
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import kr.hhplus.be.server.core.user.service.UserServiceInterface
 import kr.hhplus.be.server.facade.order.dto.OrderCriteria
@@ -31,13 +28,11 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class OrderFacade(
     private val orderService: OrderServiceInterface,
-    private val orderStatisticsService: OrderStatisticsService,
     private val userService: UserServiceInterface,
     private val productService: ProductServiceInterface,
     private val paymentService: PaymentServiceInterface,
     private val couponService: CouponServiceInterface,
     private val userCouponService: UserCouponServiceInterface,
-    private val productSaleService: ProductSaleService,
 ) {
     /**
      * 주문 처리 전체 프로세스
@@ -78,19 +73,10 @@ class OrderFacade(
         // 8. 결제 성공 상태로 변경
         orderService.changePaymentComplete(order.orderId, payment.paymentId)
 
-        // 9. 주문 완료 상태로 변경
+        // 9. 주문 완료 상태로 변경 (이벤트 발행을 통해 후속 처리가 비동기적으로 실행됨)
         val finalOrder = orderService.changeCompleted(order.orderId)
 
-        // 10. 외부 통계 시스템에 주문 정보 전송
-        val orderInfo = SendOrderStatisticCommand(finalOrder)
-        orderStatisticsService.sendOrderStatistics(orderInfo)
-
-        // 11. 주문된 제품 판매량 통계 업데이트 처리
-        order.orderItems.map {
-            productSaleService.recordProductSale(it.productId, it.quantity)
-        }
-
-        // 11. 완료된 주문 반환
+        // 완료된 주문 반환
         return finalOrder
     }
 }

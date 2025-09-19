@@ -1,7 +1,8 @@
 package kr.hhplus.be.server.core.order.service
 
 import kr.hhplus.be.server.core.order.domain.Order
-import kr.hhplus.be.server.core.order.domain.OrderStatus
+import kr.hhplus.be.server.core.order.event.OrderCompletedEvent
+import kr.hhplus.be.server.core.order.event.OrderEventPublisher
 import kr.hhplus.be.server.core.order.repository.OrderRepository
 import kr.hhplus.be.server.core.order.service.dto.*
 import kr.hhplus.be.server.core.product.repository.ProductRepository
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 class OrderService(
     private val orderRepository: OrderRepository,
     private val productRepository: ProductRepository,
+    private val orderEventPublisher: OrderEventPublisher,
 ) : OrderServiceInterface {
     /**
      * 주문 생성 (Aggregate Root 패턴)
@@ -84,12 +86,21 @@ class OrderService(
 
     /**
      * 주문 상태를 완료로 변경
+     *
+     * 주문이 완료되면 OrderCompletedEvent를 발행하여
+     * 외부 통계 시스템 전송 및 판매량 통계 업데이트를 비동기적으로 처리합니다.
      */
     @Transactional
     override fun changeCompleted(orderId: Long): Order {
         val order = getOrder(orderId)
         order.complete()
-        return orderRepository.save(order)
+        val savedOrder = orderRepository.save(order)
+
+        // 주문 완료 이벤트 발행
+        val event = OrderCompletedEvent.from(savedOrder)
+        orderEventPublisher.publishOrderCompleted(event)
+
+        return savedOrder
     }
 
     /**
