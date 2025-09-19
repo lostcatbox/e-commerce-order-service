@@ -17,7 +17,7 @@
 ## Redis를 이용한 대기열 사용 정의
 - redis의 List 자료구조를 활용해서, messageQ로 활용
   - 대기열 추가시 LPUSH, 제거시 RPOP 이용
-  - 대기열 키 : "coupon_issue_queue"
+  - 대기열 키 : "coupon:issue:queue"
   - 대기열 값 : JSON 문자열
     - couponIssueRequestId
         - userId
