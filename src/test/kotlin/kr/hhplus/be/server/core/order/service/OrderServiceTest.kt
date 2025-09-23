@@ -8,13 +8,13 @@ import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
 import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 import kr.hhplus.be.server.core.product.domain.Product
 import kr.hhplus.be.server.core.product.repository.ProductRepository
+import kr.hhplus.be.server.fake.event.FakeOrderEventPublisher
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.*
@@ -28,11 +28,13 @@ class OrderServiceTest {
     @Mock
     private lateinit var productRepository: ProductRepository
 
-    @InjectMocks
+    private val fakeOrderEventPublisher = FakeOrderEventPublisher()
+
     private lateinit var orderService: OrderService
 
     @BeforeEach
     fun setup() {
+        orderService = OrderService(orderRepository, productRepository, fakeOrderEventPublisher)
         clearInvocations(orderRepository, productRepository)
     }
 
