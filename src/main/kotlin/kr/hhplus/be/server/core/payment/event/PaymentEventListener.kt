@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.core.payment.event
 
 import kr.hhplus.be.server.core.order.event.OrderPaymentReadyEvent
-import kr.hhplus.be.server.core.order.service.OrderServiceInterface
 import kr.hhplus.be.server.core.payment.service.PaymentServiceInterface
 import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
@@ -19,7 +18,6 @@ import org.springframework.transaction.event.TransactionalEventListener
 @Component
 class PaymentEventListener(
     private val paymentService: PaymentServiceInterface,
-    private val orderService: OrderServiceInterface, // 직접 참조 (나중에 FeignClient로 교체 예정)
     private val productService: ProductServiceInterface,
 ) {
     private val log = LoggerFactory.getLogger(PaymentEventListener::class.java)
@@ -31,12 +29,7 @@ class PaymentEventListener(
         try {
             log.info("결제 처리 시작 - 주문 ID: {}, 최종 금액: {}", event.orderId, event.finalAmount)
             
-            // 주문 정보 조회 (나중에 FeignClient로 교체 예정)
-            val order = orderService.getOrder(event.orderId)
-            val processPaymentCommand = ProcessPaymentCommand(
-                order = order,
-                coupon = null // 쿠폰 할인은 이미 event.discountAmount에 반영됨
-            )
+            val processPaymentCommand = ProcessPaymentCommand(orderId = event.orderId)
             
             // PaymentService에서 비즈니스 로직 처리 및 이벤트 발행
             val payment = paymentService.processPayment(processPaymentCommand)
