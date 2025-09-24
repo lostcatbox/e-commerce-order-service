@@ -3,7 +3,6 @@ package kr.hhplus.be.server.controller.coupon
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import kr.hhplus.be.server.E2ETestSupport
-import kr.hhplus.be.server.controller.coupon.dto.CouponIssueRequest
 import kr.hhplus.be.server.core.coupon.domain.Coupon
 import kr.hhplus.be.server.core.coupon.domain.CouponStatus
 import kr.hhplus.be.server.core.coupon.domain.UserCoupon
@@ -91,18 +90,11 @@ class CouponControllerE2ETest : E2ETestSupport() {
             )
         couponRepository.save(coupon)
 
-        val request =
-            CouponIssueRequest(
-                userId = user.userId,
-                couponId = coupon.couponId,
-            )
-
         // when & then
         given()
-            .contentType(ContentType.JSON)
-            .body(request)
+            .param("userId", user.userId)
             .`when`()
-            .post("/api/coupons/issue")
+            .post("/api/coupons/{couponId}/issue", coupon.couponId)
             .then()
             .log()
             .all()
@@ -127,18 +119,12 @@ class CouponControllerE2ETest : E2ETestSupport() {
             )
         couponRepository.save(coupon)
 
-        val request =
-            CouponIssueRequest(
-                userId = user.userId,
-                couponId = coupon.couponId,
-            )
 
         // when & then
         given()
-            .contentType(ContentType.JSON)
-            .body(request)
+            .param("userId", user.userId)
             .`when`()
-            .post("/api/coupons/issue")
+            .post("/api/coupons/{couponId}/issue", coupon.couponId)
             .then()
             .log()
             .all()
@@ -167,18 +153,12 @@ class CouponControllerE2ETest : E2ETestSupport() {
         val existingUserCoupon = UserCoupon.issueCoupon(user.userId, coupon.couponId)
         userCouponRepository.save(existingUserCoupon)
 
-        val request =
-            CouponIssueRequest(
-                userId = user.userId,
-                couponId = coupon.couponId,
-            )
 
         // when & then
         given()
-            .contentType(ContentType.JSON)
-            .body(request)
+            .param("userId", user.userId)
             .`when`()
-            .post("/api/coupons/issue")
+            .post("/api/coupons/{couponId}/issue", coupon.couponId)
             .then()
             .log()
             .all()
@@ -202,18 +182,11 @@ class CouponControllerE2ETest : E2ETestSupport() {
             )
         couponRepository.save(coupon)
 
-        val request =
-            CouponIssueRequest(
-                userId = nonExistentUserId,
-                couponId = coupon.couponId,
-            )
-
         // when & then
         given()
-            .contentType(ContentType.JSON)
-            .body(request)
+            .param("userId", nonExistentUserId)
             .`when`()
-            .post("/api/coupons/issue")
+            .post("/api/coupons/{couponId}/issue", coupon.couponId)
             .then()
             .log()
             .all()
@@ -237,27 +210,18 @@ class CouponControllerE2ETest : E2ETestSupport() {
             )
         couponRepository.save(coupon)
 
-        val request =
-            CouponIssueRequest(
-                userId = user.userId,
-                couponId = coupon.couponId,
-            )
 
         // when & then
         given()
-            .contentType(ContentType.JSON)
-            .body(request)
+            .param("userId", user.userId)
             .`when`()
-            .post("/api/coupons/issue")
+            .post("/api/coupons/{couponId}/issue", coupon.couponId)
             .then()
             .log()
             .all()
             .statusCode(HttpStatus.OK.value())
-            .body("userId", equalTo(user.userId.toInt()))
-            .body("couponId", equalTo(coupon.couponId.toInt()))
-            .body("status", equalTo(UserCouponStatus.ISSUED.name))
-            .body("issuedAt", notNullValue())
-            .body("usedAt", nullValue())
+            .body("success", equalTo(true))
+            .body("message", notNullValue())
     }
 
     @DisplayName("존재하지 않는 사용자의 쿠폰 목록 조회 시 빈 목록을 반환한다.")

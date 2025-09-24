@@ -5,7 +5,6 @@ import kr.hhplus.be.server.core.coupon.domain.CouponStatus
 import kr.hhplus.be.server.core.coupon.domain.UserCoupon
 import kr.hhplus.be.server.core.coupon.domain.UserCouponStatus
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
-import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.payment.domain.Payment
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
@@ -32,9 +31,6 @@ class PaymentServiceTest {
     private lateinit var pointService: PointServiceInterface
 
     @Mock
-    private lateinit var userCouponService: UserCouponServiceInterface
-
-    @Mock
     private lateinit var couponService: CouponServiceInterface
 
     private val fakePaymentEventPublisher = FakePaymentEventPublisher()
@@ -47,7 +43,6 @@ class PaymentServiceTest {
             PaymentService(
                 paymentRepository,
                 pointService,
-                userCouponService,
                 couponService,
                 fakePaymentEventPublisher,
             )
@@ -117,7 +112,7 @@ class PaymentServiceTest {
         assertTrue(result.isSuccess())
 
         // 쿠폰 서비스는 호출되지 않고 직접 전달된 쿠폰 사용
-        verify(userCouponService, never()).useCoupon(any())
+        verify(couponService, never()).useCoupon(any())
         verify(couponService, never()).getCouponInfo(any())
         verify(pointService).usePoint(userId, finalAmount)
         verify(paymentRepository).save(any<Payment>())
@@ -160,7 +155,7 @@ class PaymentServiceTest {
                 couponStatus = CouponStatus.OPENED,
             )
 
-        whenever(userCouponService.useCoupon(userCouponId)).thenReturn(mockUserCoupon)
+        whenever(couponService.useCoupon(userCouponId)).thenReturn(mockUserCoupon)
         whenever(couponService.getCouponInfo(couponId)).thenReturn(mockCoupon)
 
         val expectedPayment = Payment.createPayment(orderAmount, discountAmount)
@@ -177,7 +172,7 @@ class PaymentServiceTest {
         assertTrue(result.isSuccess())
 
         // 쿠폰 서비스가 호출되었는지 확인
-        verify(userCouponService).useCoupon(userCouponId)
+        verify(couponService).useCoupon(userCouponId)
         verify(couponService).getCouponInfo(couponId)
         verify(pointService).usePoint(userId, finalAmount)
         verify(paymentRepository).save(any<Payment>())
