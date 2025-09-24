@@ -3,21 +3,24 @@ package kr.hhplus.be.server.core.coupon.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.hhplus.be.server.core.coupon.domain.CouponIssueRequest
 import org.springframework.data.redis.core.RedisTemplate
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
 /**
- * Redis 기반 쿠폰 발급 대기열 서비스
+ * Redis 기반 쿠폰 발급 대기열 서비스 구현체
  *
- * Redis List 자료구조를 활용한 FIFO 대기열 구현
+ * 설명:
+ * - Redis List 자료구조를 활용한 FIFO 대기열 구현
  * - LPUSH: 대기열 앞쪽에 요청 추가 (선착순)
  * - RPOP: 대기열 뒤쪽에서 요청 제거 (처리)
  * - ObjectMapper를 활용한 안전한 JSON 직렬화/역직렬화
+ * - 확장성: Redis Cluster 환경에서도 동작
+ * - 내구성: Redis 영속성 설정에 따라 데이터 보존
  */
-@Service
+@Component
 class CouponIssueQueueService(
     private val redisTemplate: RedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,
-) {
+) : CouponIssueQueueServiceInterface {
     companion object {
         private const val QUEUE_KEY_PREFIX = "coupon:issue:queue"
     }
@@ -28,7 +31,7 @@ class CouponIssueQueueService(
      * @param couponId 쿠폰 ID
      * @return 생성된 요청 ID
      */
-    fun addCouponIssueRequest(
+    override fun addCouponIssueRequest(
         userId: Long,
         couponId: Long,
     ): String {
@@ -48,7 +51,7 @@ class CouponIssueQueueService(
      * 대기열에서 다음 쿠폰 발급 요청 조회 및 제거
      * @return 다음 처리할 요청, 없으면 null
      */
-    fun getNextCouponIssueRequest(): CouponIssueRequest? {
+    override fun getNextCouponIssueRequest(): CouponIssueRequest? {
         // 모든 쿠폰에 대해 대기열 키 조회
         val allQueues = getAllQueueKeys()
 
@@ -74,7 +77,7 @@ class CouponIssueQueueService(
      * @param couponId 쿠폰 ID
      * @return 대기열 크기
      */
-    fun getQueueSize(couponId: Long): Long {
+    override fun getQueueSize(couponId: Long): Long {
         val queueKey = getQueueKey(couponId)
         return redisTemplate.opsForList().size(queueKey) ?: 0L
     }

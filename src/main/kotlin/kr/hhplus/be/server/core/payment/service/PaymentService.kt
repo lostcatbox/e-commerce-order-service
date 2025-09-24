@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.core.payment.service
 
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
-import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 import kr.hhplus.be.server.core.payment.domain.Payment
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional
 class PaymentService(
     private val paymentRepository: PaymentRepository,
     private val pointService: PointServiceInterface,
-    private val userCouponService: UserCouponServiceInterface,
     private val couponService: CouponServiceInterface,
     private val paymentEventPublisher: PaymentEventPublisherInterface,
 ) : PaymentServiceInterface {
@@ -42,7 +40,7 @@ class PaymentService(
             // 1. 쿠폰 처리 (있을 경우)
             var discountAmount = 0L
             if (command.order.usedCouponId != null) {
-                val usedCoupon = userCouponService.useCoupon(command.order.usedCouponId)
+                val usedCoupon = couponService.useCoupon(command.order.usedCouponId)
                 val couponInfo = couponService.getCouponInfo(usedCoupon.couponId)
                 discountAmount = couponInfo.discountAmount
             } else if (command.coupon != null) {
