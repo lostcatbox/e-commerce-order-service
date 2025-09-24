@@ -4,8 +4,6 @@ import kr.hhplus.be.server.controller.coupon.dto.CouponInfoResponse
 import kr.hhplus.be.server.controller.coupon.dto.UserCouponsResponse
 import kr.hhplus.be.server.core.coupon.domain.CouponIssueResponse
 import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
-import kr.hhplus.be.server.core.coupon.service.UserCouponServiceInterface
-import kr.hhplus.be.server.facade.coupon.CouponFacade
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -16,8 +14,6 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/coupons")
 class CouponController(
     private val couponService: CouponServiceInterface,
-    private val userCouponService: UserCouponServiceInterface,
-    private val couponFacade: CouponFacade,
 ) {
     /**
      * 쿠폰 정보 조회
@@ -47,7 +43,7 @@ class CouponController(
         @RequestParam userId: Long,
         @PathVariable couponId: Long,
     ): ResponseEntity<CouponIssueResponse> {
-        val response = couponFacade.requestCouponIssue(userId, couponId)
+        val response = couponService.requestCouponIssueAsync(userId, couponId)
 
         return if (response.success) {
             ResponseEntity.ok(response)
@@ -66,7 +62,7 @@ class CouponController(
     fun getQueueSize(
         @PathVariable couponId: Long,
     ): ResponseEntity<Map<String, Any>> {
-        val queueSize = couponFacade.getQueueSize(couponId)
+        val queueSize = couponService.getQueueSize(couponId)
 
         return ResponseEntity.ok(
             mapOf(
@@ -86,7 +82,7 @@ class CouponController(
     fun getUserCoupons(
         @PathVariable userId: Long,
     ): UserCouponsResponse {
-        val userCoupons = userCouponService.getUserCoupons(userId)
+        val userCoupons = couponService.getUserCoupons(userId)
         return UserCouponsResponse.from(userCoupons)
     }
 }

@@ -23,6 +23,11 @@ interface OrderServiceInterface {
     fun changePaymentReady(orderId: Long): Order
 
     /**
+     * 주문 상태를 결제 대기로 변경 (할인 금액 포함)
+     */
+    fun changePaymentReady(orderId: Long, discountAmount: Long): Order
+
+    /**
      * 주문 상태를 결제 완료로 변경
      */
     fun changePaymentComplete(
@@ -39,6 +44,11 @@ interface OrderServiceInterface {
      * 주문 상태를 실패로 변경
      */
     fun changeFailed(orderId: Long): Order
+
+    /**
+     * 주문 상태를 실패로 변경 (실패 이벤트 발행 포함)
+     */
+    fun changeFailed(orderId: Long, reason: String, failedStep: String): Order
 
     /**
      * 주문 조회

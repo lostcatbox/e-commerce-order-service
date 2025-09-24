@@ -1,33 +1,40 @@
 package kr.hhplus.be.server.controller.order
 
 import kr.hhplus.be.server.controller.order.dto.*
-import kr.hhplus.be.server.facade.order.OrderFacade
+import kr.hhplus.be.server.core.order.service.OrderServiceInterface
 import org.springframework.http.ResponseEntity
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
 /**
- * 주문 및 결제 유스케이스
+ * 주문 및 결제 유스케이스 (Event-Driven 방식)
+ * 
+ * OrderFacade를 제거하고 OrderService만 사용하여 주문을 시작
+ * 이후 과정은 Event-Driven 방식으로 자동 처리됨
  */
 @RestController
 @RequestMapping("/api/v1/orders")
 class OrderController(
-    private val orderFacade: OrderFacade,
+    private val orderService: OrderServiceInterface,
 ) {
     /**
-     * 주문 생성 및 결제 처리
+     * 주문 시작 (Event-Driven 방식)
      * POST /api/v1/orders
+     * 
+     * 주문 생성만 수행하고 OrderCreatedEvent를 발행
+     * 이후 사용자 검증, 재고 처리, 쿠폰 처리, 결제 등은 이벤트를 통해 자동 처리됨
      */
     @PostMapping
     fun createOrder(
         @RequestBody request: OrderCreateRequest,
     ): ResponseEntity<OrderCreateResponse> {
         try {
-            // OrderFacade를 통한 주문 처리
-            val completedOrder = orderFacade.processOrder(request.toOrderCriteria())
+            // Event-Driven: 주문 생성만 수행
+            val createdOrder = orderService.createOrder(request.toCreateOrderCommand())
 
-            // 응답 DTO 생성
+            // 주문 생성 직후 응답 (아직 처리 중인 상태)
             val orderItemInfos =
-                completedOrder.orderItems.map { orderItem ->
+                createdOrder.orderItems.map { orderItem ->
                     OrderItemInfo(
                         productId = orderItem.productId,
                         quantity = orderItem.quantity,
@@ -38,13 +45,60 @@ class OrderController(
 
             val response =
                 OrderCreateResponse(
-                    orderId = completedOrder.orderId,
-                    userId = completedOrder.userId,
+                    orderId = createdOrder.orderId,
+                    userId = createdOrder.userId,
                     orderItems = orderItemInfos,
-                    paymentId = completedOrder.getPaymentId() ?: 0L,
-                    orderStatus = completedOrder.getOrderStatus().name,
-                    usedCouponId = completedOrder.usedCouponId,
-                    createdAt = completedOrder.getCreatedAt(),
+                    paymentId = null, // Event-Driven 처리 중이므로 아직 없음
+                    orderStatus = createdOrder.getOrderStatus().name,
+                    usedCouponId = createdOrder.usedCouponId,
+                    createdAt = createdOrder.getCreatedAt(),
+                    message = "주문이 생성되었습니다. 결제 처리가 진행 중입니다."
+                )
+
+            return ResponseEntity.ok(response)
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    /**
+     * 주문 상태 조회 (Event-Driven 처리 상태 확인용)
+     * GET /api/v1/orders/{orderId}
+     */
+    @GetMapping("/{orderId}")
+    @Transactional(readOnly = true) // LazyInitializationException 방지
+    fun getOrder(@PathVariable orderId: Long): ResponseEntity<OrderCreateResponse> {
+        try {
+            val order = orderService.getOrder(orderId)
+
+            val orderItemInfos =
+                order.orderItems.map { orderItem ->
+                    OrderItemInfo(
+                        productId = orderItem.productId,
+                        quantity = orderItem.quantity,
+                        unitPrice = orderItem.unitPrice,
+                        totalPrice = orderItem.calculateTotalPrice(),
+                    )
+                }
+
+            val response =
+                OrderCreateResponse(
+                    orderId = order.orderId,
+                    userId = order.userId,
+                    orderItems = orderItemInfos,
+                    paymentId = order.getPaymentId(),
+                    orderStatus = order.getOrderStatus().name,
+                    usedCouponId = order.usedCouponId,
+                    createdAt = order.getCreatedAt(),
+                    message = when (order.getOrderStatus().name) {
+                        "REQUESTED" -> "주문이 접수되었습니다."
+                        "PRODUCT_READY" -> "상품 준비 중입니다."
+                        "PAYMENT_READY" -> "결제 대기 중입니다."
+                        "PAYMENT_COMPLETED" -> "결제가 완료되었습니다."
+                        "COMPLETED" -> "주문이 완료되었습니다."
+                        "FAILED" -> "주문 처리에 실패했습니다."
+                        else -> "처리 중입니다."
+                    }
                 )
 
             return ResponseEntity.ok(response)

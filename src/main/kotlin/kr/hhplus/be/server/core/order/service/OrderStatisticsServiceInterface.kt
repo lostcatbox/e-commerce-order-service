@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.core.order.service
 
 import kr.hhplus.be.server.core.order.service.dto.SendOrderStatisticCommand
-import kr.hhplus.be.server.facade.order.OrderFacade
 
 interface OrderStatisticsServiceInterface {
     /**

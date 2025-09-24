@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class UserService(
-    private val userRepository: UserRepository,
+    private val userRepository: UserRepository
 ) : UserServiceInterface {
     /**
      * 활성 사용자 확인
@@ -20,4 +20,5 @@ class UserService(
         userRepository.findByUserId(userId)
             ?: throw IllegalArgumentException("존재하지 않는 사용자입니다. 사용자 ID: $userId")
     }
+
 }

@@ -3,12 +3,13 @@ package kr.hhplus.be.server.core.product.service
 import kr.hhplus.be.server.core.product.domain.Product
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import kr.hhplus.be.server.core.product.service.ProductService
+import kr.hhplus.be.server.fake.event.FakeProductEventPublisher
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
@@ -20,8 +21,14 @@ class ProductServiceTest {
     @Mock
     private lateinit var productRepository: ProductRepository
 
-    @InjectMocks
+    private val fakeProductEventPublisher = FakeProductEventPublisher()
+
     private lateinit var productService: ProductService
+
+    @BeforeEach
+    fun setup() {
+        productService = ProductService(productRepository, fakeProductEventPublisher)
+    }
 
     @Test
     @DisplayName("상품 조회 성공")

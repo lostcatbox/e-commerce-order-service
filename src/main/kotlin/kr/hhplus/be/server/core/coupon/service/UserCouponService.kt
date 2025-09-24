@@ -2,21 +2,26 @@ package kr.hhplus.be.server.core.coupon.service
 
 import kr.hhplus.be.server.core.coupon.domain.UserCoupon
 import kr.hhplus.be.server.core.coupon.repository.UserCouponRepository
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * 사용자 쿠폰 서비스 구현체
+ * 사용자 쿠폰 서비스 구현체 (내부 전용)
+ * 
+ * 설명:
+ * - CouponService에서만 사용되는 내부 서비스
+ * - 외부에서 직접 사용하지 않고 CouponService를 통해서만 접근
+ * - @Component로 변경하여 일반적인 서비스가 아님을 명시
  */
-@Service
+@Component
 class UserCouponService(
     private val userCouponRepository: UserCouponRepository,
-) : UserCouponServiceInterface {
+) {
     /**
      * 사용자 쿠폰 발급
      */
     @Transactional
-    override fun createUserCoupon(
+    fun createUserCoupon(
         userId: Long,
         couponId: Long,
     ): UserCoupon {
@@ -38,7 +43,7 @@ class UserCouponService(
      * 사용자의 쿠폰 목록 조회
      */
     @Transactional(readOnly = true)
-    override fun getUserCoupons(userId: Long): List<UserCoupon> {
+    fun getUserCoupons(userId: Long): List<UserCoupon> {
         validateUserId(userId)
         return userCouponRepository.findByUserId(userId)
     }
@@ -47,7 +52,7 @@ class UserCouponService(
      * 사용자의 사용 가능한 쿠폰 목록 조회
      */
     @Transactional(readOnly = true)
-    override fun getUsableCoupons(userId: Long): List<UserCoupon> {
+    fun getUsableCoupons(userId: Long): List<UserCoupon> {
         validateUserId(userId)
         return userCouponRepository.findUsableCouponsByUserId(userId)
     }
@@ -56,7 +61,7 @@ class UserCouponService(
      * 사용자 쿠폰 사용
      */
     @Transactional
-    override fun useCoupon(userCouponId: Long): UserCoupon {
+    fun useCoupon(userCouponId: Long): UserCoupon {
         validateUserCouponId(userCouponId)
 
         // 사용자 쿠폰 조회
@@ -69,6 +74,15 @@ class UserCouponService(
 
         // 사용된 사용자 쿠폰 저장
         return userCouponRepository.save(userCoupon)
+    }
+
+    /**
+     * 사용자와 쿠폰 ID로 사용자 쿠폰 조회
+     */
+    fun findByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon? {
+        validateUserId(userId)
+        validateCouponId(couponId)
+        return userCouponRepository.findByUserIdAndCouponId(userId, couponId)
     }
 
     /**

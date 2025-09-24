@@ -1,55 +1,49 @@
 package kr.hhplus.be.server.core.product.event
 
 import kr.hhplus.be.server.core.order.event.OrderCompletedEvent
-import kr.hhplus.be.server.core.product.service.ProductSaleService
+import kr.hhplus.be.server.core.order.event.OrderProductReadyEvent
+import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
+import kr.hhplus.be.server.core.product.service.ProductService
+import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 /**
- * 제품 이벤트 구독 서비스
- *
- * 제품 도메인과 관련된 이벤트를 구독하여 제품 관련 비즈니스 로직을 처리합니다.
- * 주문 완료 이벤트를 구독하여 제품 판매량 통계를 업데이트합니다.
+ * 상품 도메인 이벤트 리스너
  */
 @Component
 class ProductEventListener(
-    private val productSaleService: ProductSaleService,
+    private val productService: ProductService,
 ) {
-    companion object {
-        private val log = LoggerFactory.getLogger(ProductEventListener::class.java)
-    }
+    private val log = LoggerFactory.getLogger(ProductEventListener::class.java)
 
-    /**
-     * 주문 완료 시 제품 판매량 통계 업데이트
-     *
-     * 주문이 완료되었을 때 해당 주문에 포함된 모든 제품의 판매량을 통계에 반영합니다.
-     *
-     * @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-     * - 주문 트랜잭션이 성공적으로 커밋된 후에만 처리
-     * - 통계 업데이트 실패가 주문 처리에 영향을 주지 않음
-     *
-     * @Async
-     * - 통계 업데이트를 비동기로 수행하여 별도 트랜잭션에서 실행
-     *
-     * @param event 주문 완료 이벤트
-     */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun handleOrderCompleted(event: OrderCompletedEvent) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun handleOrderProductReady(event: OrderProductReadyEvent) {
         try {
-            log.info("제품 판매량 통계 업데이트 시작 - 주문 ID: {}", event.orderId)
+            log.info("재고 처리 시작 - 주문 ID: {}", event.orderId)
 
-            event.orderItems.forEach { item ->
-                productSaleService.recordProductSale(item.productId, item.quantity)
-                log.debug("제품 판매량 업데이트 완료 - 제품 ID: {}, 수량: {}", item.productId, item.quantity)
-            }
+            // 이벤트에서 직접 상품 정보 사용 (Cross-domain 호출 최소화)
+            val saleCommand =
+                SaleProductsCommand(
+                    orderItems =
+                        event.orderItems.map { orderItem ->
+                            OrderItemCommand(orderItem.productId, orderItem.quantity)
+                        },
+                )
 
-            log.info("제품 판매량 통계 업데이트 완료 - 주문 ID: {}", event.orderId)
+            // ProductService에서 비즈니스 로직 처리 및 이벤트 발행
+            productService.processOrderProductStock(event.orderId, saleCommand)
+
+            log.info("재고 처리 성공 - 주문 ID: {}", event.orderId)
         } catch (e: Exception) {
-            log.error("제품 판매량 통계 업데이트 중 오류 발생 - 주문 ID: {}, 오류: {}", event.orderId, e.message, e)
+            log.error("재고 처리 실패 - 주문 ID: {}, 오류: {}", event.orderId, e.message)
         }
     }
 }
