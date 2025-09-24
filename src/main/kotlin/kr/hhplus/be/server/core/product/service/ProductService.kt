@@ -1,6 +1,10 @@
 package kr.hhplus.be.server.core.product.service
 
+import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 import kr.hhplus.be.server.core.product.domain.Product
+import kr.hhplus.be.server.core.product.event.ProductEventPublisherInterface
+import kr.hhplus.be.server.core.product.event.ProductInsufficientData
+import kr.hhplus.be.server.core.product.event.ProductReservationData
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
 import org.springframework.stereotype.Service
@@ -13,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ProductService(
     private val productRepository: ProductRepository,
+    private val productEventPublisher: ProductEventPublisherInterface,
 ) : ProductServiceInterface {
     /**
      * 상품 정보 조회
@@ -55,6 +60,75 @@ class ProductService(
             // 재고 차감된 상품 저장
             productRepository.save(product)
         }
+    }
+
+    /**
+     * 주문 상품들 재고 복구 (재고 복구)
+     */
+    @Transactional
+    override fun restoreStock(orderItems: List<OrderItemCommand>) {
+        orderItems.forEach { orderItemCommand ->
+            validateProductId(orderItemCommand.productId)
+
+            // 상품 조회
+            val product =
+                productRepository.findByProductIdWithPessimisticLock(orderItemCommand.productId)
+                    ?: throw IllegalArgumentException("존재하지 않는 상품입니다. 상품 ID: ${orderItemCommand.productId}")
+
+            // 도메인 로직을 통한 재고 복구
+            product.restoreStock(orderItemCommand.quantity)
+
+            // 재고 복구된 상품 저장
+            productRepository.save(product)
+        }
+    }
+
+    /**
+     * 주문 상품 재고 처리 및 이벤트 발행
+     */
+    fun processOrderProductStock(
+        orderId: Long,
+        command: SaleProductsCommand,
+    ) {
+        try {
+            // 기존 비즈니스 로직 호출
+            saleOrderProducts(command)
+
+            // 재고 확보 성공 이벤트 발행
+            val reservations: List<ProductReservationData> =
+                command.orderItems.map { orderItem ->
+                    ProductReservationData(
+                        productId = orderItem.productId,
+                        quantity = orderItem.quantity,
+                        reservedStock = orderItem.quantity,
+                    )
+                }
+
+            productEventPublisher.publishProductStockReserved(
+                orderId = orderId,
+                products = reservations,
+            )
+        } catch (e: Exception) {
+            // 재고 부족 이벤트 발행
+            val insufficientProducts = extractInsufficientProducts(e)
+
+            productEventPublisher.publishProductStockInsufficient(
+                orderId = orderId,
+                insufficientProducts = insufficientProducts,
+                reason = e.message ?: "Stock insufficient",
+            )
+            throw e
+        }
+    }
+
+    /**
+     * 예외에서 부족한 상품 정보 추출 (임시 구현)
+     */
+    private fun extractInsufficientProducts(
+        @Suppress("UNUSED_PARAMETER") e: Exception,
+    ): List<ProductInsufficientData> {
+        // 실제로는 예외에서 부족한 상품 정보를 추출해야 함
+        return emptyList<ProductInsufficientData>()
     }
 
     /**

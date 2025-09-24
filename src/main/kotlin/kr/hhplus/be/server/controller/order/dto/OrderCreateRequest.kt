@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.controller.order.dto
 
-import kr.hhplus.be.server.facade.order.dto.OrderCriteria
-import kr.hhplus.be.server.facade.order.dto.OrderItemCriteria
+import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
+import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 
 /**
  * 주문 생성 요청
@@ -11,12 +11,12 @@ data class OrderCreateRequest(
     val orderItems: List<OrderItemRequest>,
     val couponId: Long? = null,
 ) {
-    fun toOrderCriteria(): OrderCriteria =
-        OrderCriteria(
+    fun toCreateOrderCommand(): CreateOrderCommand =
+        CreateOrderCommand(
             userId = userId,
             orderItems =
                 orderItems.map {
-                    OrderItemCriteria(
+                    OrderItemCommand(
                         productId = it.productId,
                         quantity = it.quantity,
                     )

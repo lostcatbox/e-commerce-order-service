@@ -40,7 +40,7 @@ class OrderControllerE2ETest : E2ETestSupport() {
     @Autowired
     private lateinit var couponRepository: CouponRepository
 
-    @DisplayName("주문/결제 시, 잔액은 충분해야 한다.")
+    @DisplayName("주문 생성 후 Event-Driven 처리로 잔액 부족 실패")
     @Test
     fun orderPaymentWithInsufficientBalance() {
         // given
@@ -67,8 +67,8 @@ class OrderControllerE2ETest : E2ETestSupport() {
                 couponId = null,
             )
 
-        // when & then
-        given()
+        // when: Event-Driven 방식에서는 일단 주문 생성 성공
+        val response = given()
             .contentType(ContentType.JSON)
             .body(request)
             .`when`()
@@ -76,11 +76,27 @@ class OrderControllerE2ETest : E2ETestSupport() {
             .then()
             .log()
             .all()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("message", containsString("잔액이 0 미만이 될 수 없습니다."))
+            .statusCode(HttpStatus.OK.value()) // 주문 생성은 성공
+            .extract()
+            .response()
+
+        val orderId = response.jsonPath().getLong("orderId")
+
+        // then: 비동기 처리 후 주문 상태가 FAILED로 변경되어야 함
+        Thread.sleep(3000) // Event-Driven 비동기 처리 대기
+
+        // 주문 상태 확인 (실패 상태가 되어야 함)
+        given()
+            .`when`()
+            .get("/api/v1/orders/$orderId")
+            .then()
+            .log()
+            .all()
+            .statusCode(HttpStatus.OK.value())
+            .body("orderStatus", org.hamcrest.Matchers.equalTo("FAILED"))
     }
 
-    @DisplayName("주문/결제 시, 재고는 충분해야 한다.")
+    @DisplayName("주문 생성 후 Event-Driven 처리로 재고 부족 실패")
     @Test
     fun orderPaymentWithInsufficientStock() {
         // given
@@ -107,8 +123,8 @@ class OrderControllerE2ETest : E2ETestSupport() {
                 couponId = null,
             )
 
-        // when & then
-        given()
+        // when: Event-Driven 방식에서는 일단 주문 생성 성공
+        val response = given()
             .contentType(ContentType.JSON)
             .body(request)
             .`when`()
@@ -116,11 +132,27 @@ class OrderControllerE2ETest : E2ETestSupport() {
             .then()
             .log()
             .all()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("message", containsString("재고가 부족합니다."))
+            .statusCode(HttpStatus.OK.value()) // 주문 생성은 성공
+            .extract()
+            .response()
+
+        val orderId = response.jsonPath().getLong("orderId")
+
+        // then: 비동기 처리 후 주문 상태가 FAILED로 변경되어야 함
+        Thread.sleep(3000) // Event-Driven 비동기 처리 대기
+
+        // 주문 상태 확인 (실패 상태가 되어야 함)
+        given()
+            .`when`()
+            .get("/api/v1/orders/$orderId")
+            .then()
+            .log()
+            .all()
+            .statusCode(HttpStatus.OK.value())
+            .body("orderStatus", org.hamcrest.Matchers.equalTo("FAILED"))
     }
 
-    @DisplayName("주문/결제 시, 쿠폰은 사용 가능해야 한다.")
+    @DisplayName("주문 생성 후 Event-Driven 처리로 쿠폰 사용 불가 실패")
     @Test
     fun orderPaymentWithInvalidCoupon() {
         // given
@@ -162,8 +194,8 @@ class OrderControllerE2ETest : E2ETestSupport() {
                 couponId = coupon.couponId,
             )
 
-        // when & then
-        given()
+        // when: Event-Driven 방식에서는 일단 주문 생성 성공
+        val response = given()
             .contentType(ContentType.JSON)
             .body(request)
             .`when`()
@@ -171,11 +203,27 @@ class OrderControllerE2ETest : E2ETestSupport() {
             .then()
             .log()
             .all()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("message", containsString("쿠폰이 사용 가능한 상태가 아닙니다."))
+            .statusCode(HttpStatus.OK.value()) // 주문 생성은 성공
+            .extract()
+            .response()
+
+        val orderId = response.jsonPath().getLong("orderId")
+
+        // then: 비동기 처리 후 주문 상태가 FAILED로 변경되어야 함
+        Thread.sleep(3000) // Event-Driven 비동기 처리 대기
+
+        // 주문 상태 확인 (실패 상태가 되어야 함)
+        given()
+            .`when`()
+            .get("/api/v1/orders/$orderId")
+            .then()
+            .log()
+            .all()
+            .statusCode(HttpStatus.OK.value())
+            .body("orderStatus", org.hamcrest.Matchers.equalTo("FAILED"))
     }
 
-    @DisplayName("주문/결제 한다.")
+    @DisplayName("주문 생성 후 Event-Driven 처리로 정상 완료")
     @Test
     fun orderPayment() {
         // given
@@ -203,8 +251,8 @@ class OrderControllerE2ETest : E2ETestSupport() {
                 couponId = null,
             )
 
-        // when & then
-        given()
+        // when: Event-Driven 방식에서는 일단 주문 생성 성공
+        val response = given()
             .contentType(ContentType.JSON)
             .body(request)
             .`when`()
@@ -212,6 +260,43 @@ class OrderControllerE2ETest : E2ETestSupport() {
             .then()
             .log()
             .all()
+            .statusCode(HttpStatus.OK.value()) // 주문 생성은 성공
+            .extract()
+            .response()
+
+        val orderId = response.jsonPath().getLong("orderId")
+
+        // then: 비동기 처리 후 주문 상태가 COMPLETED로 변경되어야 함
+        // Event-Driven 처리 완료까지 폴링으로 확인
+        var attempts = 0
+        var currentStatus = ""
+        while (attempts < 20) { // 최대 10초 대기
+            Thread.sleep(500)
+            
+            val statusResponse = given()
+                .`when`()
+                .get("/api/v1/orders/$orderId")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract()
+                .response()
+                
+            currentStatus = statusResponse.jsonPath().getString("orderStatus")
+            
+            if (currentStatus == "COMPLETED" || currentStatus == "FAILED") {
+                break
+            }
+            attempts++
+        }
+
+        // 주문 상태 확인 (완료 상태가 되어야 함)
+        given()
+            .`when`()
+            .get("/api/v1/orders/$orderId")
+            .then()
+            .log()
+            .all()
             .statusCode(HttpStatus.OK.value())
+            .body("orderStatus", org.hamcrest.Matchers.equalTo("COMPLETED"))
     }
 }

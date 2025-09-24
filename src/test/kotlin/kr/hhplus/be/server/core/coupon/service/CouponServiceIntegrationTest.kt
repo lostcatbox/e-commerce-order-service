@@ -3,6 +3,7 @@ package kr.hhplus.be.server.core.coupon.service
 import jakarta.persistence.EntityManager
 import kr.hhplus.be.server.IntegrationTestSupport
 import kr.hhplus.be.server.core.coupon.domain.Coupon
+import kr.hhplus.be.server.core.coupon.domain.CouponIssueRequest
 import kr.hhplus.be.server.core.coupon.domain.CouponStatus
 import kr.hhplus.be.server.core.coupon.repository.CouponRepository
 import org.junit.jupiter.api.AfterEach
@@ -72,17 +73,19 @@ class CouponServiceIntegrationTest : IntegrationTestSupport() {
         val originalStock = testCoupon.getStock()
 
         // when
-        val result = couponService.issueCoupon(testCoupon.couponId)
+        val request = CouponIssueRequest.create(1L, testCoupon.couponId)
+        val result = couponService.issueCoupon(request)
 
         // then
         assertNotNull(result)
-        assertEquals(originalStock - 1, result.getStock())
+        assertEquals(1L, result.userId)
+        assertEquals(testCoupon.couponId, result.couponId)
 
         // 영속성 컨텍스트 초기화commit 및 초기화
         entityManager.flush()
         entityManager.clear()
 
-        // DB에서 다시 조회하여 실제로 저장되었는지 확인
+        // 재고가 차감되었는지 확인
         val savedCoupon = couponRepository.findByCouponId(testCoupon.couponId)
         assertNotNull(savedCoupon)
         assertEquals(originalStock - 1, savedCoupon!!.getStock())
@@ -106,7 +109,10 @@ class CouponServiceIntegrationTest : IntegrationTestSupport() {
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                couponService.issueCoupon(zeroStockCoupon.couponId)
+                val request =
+                    kr.hhplus.be.server.core.coupon.domain.CouponIssueRequest
+                        .create(1L, zeroStockCoupon.couponId)
+                couponService.issueCoupon(request)
             }
 
         assertTrue(exception.message!!.contains("쿠폰 재고가 부족합니다"))
@@ -130,7 +136,10 @@ class CouponServiceIntegrationTest : IntegrationTestSupport() {
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                couponService.issueCoupon(closedCoupon.couponId)
+                val request =
+                    kr.hhplus.be.server.core.coupon.domain.CouponIssueRequest
+                        .create(1L, closedCoupon.couponId)
+                couponService.issueCoupon(request)
             }
 
         assertTrue(exception.message!!.contains("쿠폰이 사용 가능한 상태가 아닙니다"))
@@ -156,11 +165,15 @@ class CouponServiceIntegrationTest : IntegrationTestSupport() {
         val successCount = AtomicInteger(0)
         val failureCount = AtomicInteger(0)
 
-        // when - 동시에 쿠폰 발급 시도
-        repeat(threadCount) {
+        // when - 동시에 쿠폰 발급 시도 (각각 다른 사용자 ID 사용)
+        repeat(threadCount) { index ->
             executor.submit {
                 try {
-                    couponService.issueCoupon(concurrentCoupon.couponId)
+                    val userId = 100L + index // 서로 다른 사용자 ID 사용
+                    val request =
+                        kr.hhplus.be.server.core.coupon.domain.CouponIssueRequest
+                            .create(userId, concurrentCoupon.couponId)
+                    couponService.issueCoupon(request)
                     successCount.incrementAndGet()
                 } catch (e: Exception) {
                     failureCount.incrementAndGet()

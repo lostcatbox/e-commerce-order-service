@@ -2,22 +2,22 @@ package kr.hhplus.be.server.core.payment.service
 
 import kr.hhplus.be.server.core.coupon.domain.Coupon
 import kr.hhplus.be.server.core.coupon.domain.CouponStatus
+import kr.hhplus.be.server.core.coupon.domain.UserCoupon
+import kr.hhplus.be.server.core.coupon.domain.UserCouponStatus
+import kr.hhplus.be.server.core.coupon.service.CouponServiceInterface
 import kr.hhplus.be.server.core.order.domain.Order
-import kr.hhplus.be.server.core.order.domain.OrderItem
-import kr.hhplus.be.server.core.order.domain.OrderStatus
+import kr.hhplus.be.server.core.order.service.OrderServiceInterface
 import kr.hhplus.be.server.core.payment.domain.Payment
-import kr.hhplus.be.server.core.payment.domain.PaymentStatus
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
-import kr.hhplus.be.server.core.payment.service.PaymentService
 import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.point.service.PointServiceInterface
+import kr.hhplus.be.server.fake.event.FakePaymentEventPublisher
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.*
@@ -31,11 +31,26 @@ class PaymentServiceTest {
     @Mock
     private lateinit var pointService: PointServiceInterface
 
-    @InjectMocks
+    @Mock
+    private lateinit var couponService: CouponServiceInterface
+
+    @Mock
+    private lateinit var orderService: OrderServiceInterface
+
+    private val fakePaymentEventPublisher = FakePaymentEventPublisher()
+
     private lateinit var paymentService: PaymentService
 
     @BeforeEach
     fun setup() {
+        paymentService =
+            PaymentService(
+                paymentRepository,
+                pointService,
+                couponService,
+                orderService,
+                fakePaymentEventPublisher,
+            )
         clearInvocations(paymentRepository, pointService)
     }
 
@@ -47,7 +62,9 @@ class PaymentServiceTest {
         val orderAmount = 50000L
 
         val order = createPaymentReadyOrder(userId, orderAmount)
-        val command = ProcessPaymentCommand(order = order, coupon = null)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+        
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val expectedPayment = Payment.createPayment(orderAmount, 0L)
         expectedPayment.success() // 성공 상태로 변경
@@ -68,30 +85,82 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("쿠폰 사용하여 결제 처리 성공")
-    fun `쿠폰 사용하여 결제 처리 성공`() {
+    @DisplayName("쿠폰 없이 결제 처리 성공 - 추가 검증")
+    fun `쿠폰 없이 결제 처리 성공 - 추가 검증`() {
         // given
         val userId = 1L
-        val orderId = 100L
+        val orderAmount = 30000L
 
+        val order = createPaymentReadyOrder(userId, orderAmount)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+        
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
+
+        val expectedPayment = Payment.createPayment(orderAmount, 0L)
+        expectedPayment.success()
+
+        whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
+
+        // when
+        val result = paymentService.processPayment(command)
+
+        // then
+        assertEquals(orderAmount, result.originalAmount)
+        assertEquals(0L, result.discountAmount)
+        assertEquals(orderAmount, result.finalAmount)
+        assertTrue(result.isSuccess())
+
+        // 쿠폰이 없으므로 쿠폰 서비스는 호출되지 않음
+        verify(couponService, never()).useCoupon(any())
+        verify(couponService, never()).getCouponInfo(any())
+        verify(pointService).usePoint(userId, orderAmount)
+        verify(paymentRepository).save(any<Payment>())
+    }
+
+    @Test
+    @DisplayName("주문에 쿠폰 ID가 설정된 경우 쿠폰 서비스를 통한 결제 처리")
+    fun `주문에 쿠폰 ID가 설정된 경우 쿠폰 서비스를 통한 결제 처리`() {
+        // given
+        val userId = 1L
         val orderAmount = 50000L
         val discountAmount = 10000L
         val finalAmount = orderAmount - discountAmount
+        val userCouponId = 200L
+        val couponId = 500L
 
         val order = createPaymentReadyOrder(userId, orderAmount)
-        val coupon =
+        // 주문에 쿠폰 ID 설정 (실제 운영 환경과 동일)
+        val orderWithCoupon = Order(userId = userId, usedCouponId = userCouponId)
+        orderWithCoupon.addOrderItem(productId = 1L, quantity = 1, unitPrice = orderAmount)
+        orderWithCoupon.prepareProducts()
+        orderWithCoupon.readyForPayment()
+
+        val command = ProcessPaymentCommand(orderId = orderWithCoupon.orderId)
+        
+        whenever(orderService.getOrder(orderWithCoupon.orderId)).thenReturn(orderWithCoupon)
+
+        // Mock 설정
+        val mockUserCoupon =
+            UserCoupon(
+                userCouponId = userCouponId,
+                userId = userId,
+                couponId = couponId,
+                status = UserCouponStatus.USED,
+            )
+        val mockCoupon =
             Coupon(
-                couponId = 500L,
+                couponId = couponId,
                 description = "10000원 할인 쿠폰",
                 discountAmount = discountAmount,
                 stock = 100,
                 couponStatus = CouponStatus.OPENED,
             )
-        val command = ProcessPaymentCommand(order = order, coupon = coupon)
+
+        whenever(couponService.useCoupon(userCouponId)).thenReturn(mockUserCoupon)
+        whenever(couponService.getCouponInfo(couponId)).thenReturn(mockCoupon)
 
         val expectedPayment = Payment.createPayment(orderAmount, discountAmount)
-        expectedPayment.success() // 성공 상태로 변경
-
+        expectedPayment.success()
         whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
 
         // when
@@ -103,6 +172,9 @@ class PaymentServiceTest {
         assertEquals(finalAmount, result.finalAmount)
         assertTrue(result.isSuccess())
 
+        // 쿠폰 서비스가 호출되었는지 확인
+        verify(couponService).useCoupon(userCouponId)
+        verify(couponService).getCouponInfo(couponId)
         verify(pointService).usePoint(userId, finalAmount)
         verify(paymentRepository).save(any<Payment>())
     }
@@ -117,7 +189,9 @@ class PaymentServiceTest {
         val orderAmount = 50000L
 
         val order = createPaymentReadyOrder(userId, orderAmount)
-        val command = ProcessPaymentCommand(order = order, coupon = null)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+        
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val failedPayment = Payment.createPayment(orderAmount, 0L)
         failedPayment.fail() // 실패 상태로 변경
@@ -143,7 +217,9 @@ class PaymentServiceTest {
         val order = Order(userId = 1L)
         order.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         // orderStatus는 기본값인 OrderStatus.REQUESTED (결제 대기가 아닌 잘못된 상태)
-        val command = ProcessPaymentCommand(order = order, coupon = null)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+        
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         // when & then
         val exception =
@@ -231,7 +307,9 @@ class PaymentServiceTest {
         val minAmount = 1L
 
         val order = createPaymentReadyOrder(userId, minAmount)
-        val command = ProcessPaymentCommand(order = order, coupon = null)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+        
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val expectedPayment = Payment.createPayment(minAmount, 0L)
         expectedPayment.success() // 성공 상태로 변경

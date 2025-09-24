@@ -7,10 +7,11 @@ data class OrderCreateResponse(
     val orderId: Long,
     val userId: Long,
     val orderItems: List<OrderItemInfo>,
-    val paymentId: Long,
+    val paymentId: Long?,
     val orderStatus: String, // REQUESTED, PAID, SUCCESS, FAILED
     val usedCouponId: Long?,
     val createdAt: Long,
+    val message: String? = null, // Event-Driven 처리 상태 메시지
 )
 
 /**

@@ -11,16 +11,12 @@ class Product(
     @Id
     @Column(name = "product_id")
     val productId: Long,
-
     @Column(name = "name", nullable = false)
     val name: String,
-
     @Column(name = "description", nullable = false)
     val description: String,
-
     @Column(name = "price", nullable = false)
     val price: Long,
-
     @Column(name = "stock", nullable = false)
     private var stock: Int,
 ) {
@@ -86,5 +82,17 @@ class Product(
         require(newStock <= MAX_STOCK) {
             "재고량이 $MAX_STOCK 초과할 수 없습니다. 계산된 재고량: $newStock"
         }
+    }
+
+    /**
+     * 재고 복구 (재고 추가)
+     * @param quantity 복구할 수량
+     */
+    fun restoreStock(quantity: Int) {
+        require(quantity > 0) { "복구할 재고 수량은 0보다 커야 합니다. 요청 수량: $quantity" }
+        val newStock = stock + quantity
+        validateStock(newStock)
+
+        this.stock = newStock
     }
 }
