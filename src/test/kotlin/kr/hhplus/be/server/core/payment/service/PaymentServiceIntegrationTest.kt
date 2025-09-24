@@ -4,8 +4,11 @@ import jakarta.persistence.EntityManager
 import kr.hhplus.be.server.IntegrationTestSupport
 import kr.hhplus.be.server.core.coupon.domain.Coupon
 import kr.hhplus.be.server.core.coupon.domain.CouponStatus
+import kr.hhplus.be.server.core.coupon.domain.UserCoupon
+import kr.hhplus.be.server.core.coupon.domain.UserCouponStatus
+import kr.hhplus.be.server.core.coupon.repository.CouponRepository
+import kr.hhplus.be.server.core.coupon.repository.UserCouponRepository
 import kr.hhplus.be.server.core.order.domain.Order
-import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
 import kr.hhplus.be.server.core.order.service.OrderService
 import kr.hhplus.be.server.core.payment.domain.Payment
@@ -47,6 +50,12 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
     private lateinit var userPointRepository: UserPointRepository
 
     @Autowired
+    private lateinit var couponRepository: CouponRepository
+
+    @Autowired
+    private lateinit var userCouponRepository: UserCouponRepository
+
+    @Autowired
     private lateinit var entityManager: EntityManager
 
     private val testUserId = 100L
@@ -79,15 +88,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         testUserPoint.charge(100000L) // 10만원 충전
         userPointRepository.save(testUserPoint)
 
-        // 테스트용 5000원 할인 쿠폰 생성
-        val testCoupon =
-            Coupon(
-                couponId = 1L,
-                description = "5000원 할인 쿠폰",
-                discountAmount = 5000L,
-                stock = 100,
-                couponStatus = CouponStatus.OPENED,
-            )
+        // 테스트 데이터 준비 완료
     }
 
     @Test
@@ -95,7 +96,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
     @Transactional
     fun `결제 처리 성공`() {
         // given
-        val command = ProcessPaymentCommand(testOrder, null)
+        val command = ProcessPaymentCommand(orderId = testOrder.orderId)
         val originalPointBalance = testUserPoint.getBalance()
         val expectedPaymentAmount = testOrder.calculateTotalAmount()
 
@@ -130,52 +131,32 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
     @Transactional
     fun `쿠폰이 설정된 주문으로 결제 처리`() {
         // given - 실제 쿠폰과 사용자 쿠폰 데이터 생성
-        val discountCoupon = Coupon(
-            couponId = 1L,
-            description = "5000원 할인 쿠폰",
-            discountAmount = 5000L,
-            stock = 100,
-            couponStatus = CouponStatus.OPENED,
-        )
+        val discountCoupon =
+            Coupon(
+                couponId = 1L,
+                description = "5000원 할인 쿠폰",
+                discountAmount = 5000L,
+                stock = 100,
+                couponStatus = CouponStatus.OPENED,
+            )
         
-        // 쿠폰이 설정된 주문 생성 (실제 운영 환경처럼)
-        val orderWithCoupon = Order(userId = testUserId, usedCouponId = 1L)
+        // 쿠폰을 DB에 저장
+        couponRepository.save(discountCoupon)
+        
+        // 사용자 쿠폰 생성 및 저장
+        val userCoupon = UserCoupon.issueCoupon(testUserId, discountCoupon.couponId)
+        userCouponRepository.save(userCoupon)
+
+        // 쿠폰이 설정된 주문 생성
+        val orderWithCoupon = Order(userId = testUserId, usedCouponId = userCoupon.userCouponId)
         orderWithCoupon.addOrderItem(testProduct.productId, 2, testProduct.price)
         orderWithCoupon.prepareProducts()
         orderWithCoupon.readyForPayment()
         orderRepository.save(orderWithCoupon)
-        
-        val command = ProcessPaymentCommand(orderWithCoupon, null)
+
+        val command = ProcessPaymentCommand(orderId = orderWithCoupon.orderId)
         val originalPointBalance = testUserPoint.getBalance()
         val originalAmount = orderWithCoupon.calculateTotalAmount()
-
-        // when & then - 통합 테스트에서는 실제 UserCouponService를 사용해야 하므로
-        // 이 테스트는 UserCoupon과 Coupon 데이터가 실제로 DB에 있어야 성공합니다.
-        // 현재는 쿠폰 서비스 통합이 없으므로 예외가 발생할 것을 검증
-        val exception = assertThrows<Exception> {
-            paymentService.processPayment(command)
-        }
-        
-        // 쿠폰 관련 서비스가 완전히 구현되면 성공 케이스로 변경 예정
-        assertNotNull(exception)
-    }
-
-    @Test
-    @DisplayName("쿠폰 객체를 직접 전달하여 할인 적용된 결제 처리")
-    @Transactional
-    fun `쿠폰 객체를 직접 전달하여 할인 적용된 결제 처리`() {
-        // given
-        val discountCoupon = Coupon(
-            couponId = 1L,
-            description = "5000원 할인 쿠폰",
-            discountAmount = 5000L,
-            stock = 100,
-            couponStatus = CouponStatus.OPENED,
-        )
-        
-        val command = ProcessPaymentCommand(testOrder, discountCoupon)
-        val originalPointBalance = testUserPoint.getBalance()
-        val originalAmount = testOrder.calculateTotalAmount()
         val expectedFinalAmount = originalAmount - discountCoupon.discountAmount
 
         // when
@@ -193,6 +174,10 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         val updatedUserPoint = userPointRepository.findByUserId(testUserId)
         assertEquals(originalPointBalance - expectedFinalAmount, updatedUserPoint!!.getBalance())
 
+        // 사용자 쿠폰이 사용됨 상태로 변경되었는지 확인
+        val updatedUserCoupon = userCouponRepository.findByUserCouponId(userCoupon.userCouponId)
+        assertEquals(UserCouponStatus.USED, updatedUserCoupon!!.getStatus())
+
         // 영속성 컨텍스트 초기화
         entityManager.flush()
         entityManager.clear()
@@ -200,8 +185,44 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         // DB에서 다시 조회하여 실제로 저장되었는지 확인
         val savedPayment = paymentRepository.findByPaymentId(result.paymentId)
         assertNotNull(savedPayment)
-        assertEquals(result.discountAmount, savedPayment!!.discountAmount)
-        assertEquals(result.finalAmount, savedPayment.finalAmount)
+        assertEquals(discountCoupon.discountAmount, savedPayment!!.discountAmount)
+        assertEquals(expectedFinalAmount, savedPayment.finalAmount)
+        assertEquals(PaymentStatus.SUCCESS, savedPayment.getPaymentStatus())
+    }
+
+    @Test
+    @DisplayName("쿠폰 없이 일반 결제 처리 - 추가 검증")
+    @Transactional
+    fun `쿠폰 없이 일반 결제 처리 - 추가 검증`() {
+        // given
+        val command = ProcessPaymentCommand(orderId = testOrder.orderId)
+        val originalPointBalance = testUserPoint.getBalance()
+        val originalAmount = testOrder.calculateTotalAmount()
+
+        // when
+        val result = paymentService.processPayment(command)
+
+        // then
+        assertNotNull(result)
+        assertEquals(originalAmount, result.originalAmount)
+        assertEquals(0L, result.discountAmount)
+        assertEquals(originalAmount, result.finalAmount)
+        assertEquals(PaymentStatus.SUCCESS, result.getPaymentStatus())
+        assertTrue(result.isSuccess())
+
+        // 원래 금액만큼 포인트가 차감되었는지 확인
+        val updatedUserPoint = userPointRepository.findByUserId(testUserId)
+        assertEquals(originalPointBalance - originalAmount, updatedUserPoint!!.getBalance())
+
+        // 영속성 컨텍스트 초기화
+        entityManager.flush()
+        entityManager.clear()
+
+        // DB에서 다시 조회하여 실제로 저장되었는지 확인
+        val savedPayment = paymentRepository.findByPaymentId(result.paymentId)
+        assertNotNull(savedPayment)
+        assertEquals(0L, savedPayment!!.discountAmount)
+        assertEquals(originalAmount, savedPayment.finalAmount)
     }
 
     @Test
@@ -212,7 +233,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         testUserPoint.use(99000L) // 1000원만 남김
         userPointRepository.save(testUserPoint)
 
-        val command = ProcessPaymentCommand(testOrder, null)
+        val command = ProcessPaymentCommand(orderId = testOrder.orderId)
         val originalPointBalance = testUserPoint.getBalance()
 
         // when & then
@@ -248,7 +269,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         testOrder.fail() // 주문 상태를 실패로 변경
         orderRepository.save(testOrder)
 
-        val command = ProcessPaymentCommand(testOrder, null)
+        val command = ProcessPaymentCommand(orderId = testOrder.orderId)
 
         // when & then
         val exception =
@@ -264,7 +285,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
     @Transactional
     fun `결제 조회`() {
         // given
-        val command = ProcessPaymentCommand(testOrder, null)
+        val command = ProcessPaymentCommand(orderId = testOrder.orderId)
         val createdPayment = paymentService.processPayment(command)
 
         // when
@@ -317,7 +338,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
     @Transactional
     fun `주문별 결제 조회`() {
         // given
-        val command = ProcessPaymentCommand(testOrder, null)
+        val command = ProcessPaymentCommand(orderId = testOrder.orderId)
         val createdPayment = paymentService.processPayment(command)
         testOrder.paid(createdPayment.paymentId) // 주문 상태를 결제 완료로 변경
         orderRepository.save(testOrder)
