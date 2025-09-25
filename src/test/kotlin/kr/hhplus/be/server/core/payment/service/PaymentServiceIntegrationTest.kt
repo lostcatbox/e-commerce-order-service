@@ -11,7 +11,6 @@ import kr.hhplus.be.server.core.coupon.repository.UserCouponRepository
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.repository.OrderRepository
 import kr.hhplus.be.server.core.order.service.OrderService
-import kr.hhplus.be.server.core.payment.domain.Payment
 import kr.hhplus.be.server.core.payment.domain.PaymentStatus
 import kr.hhplus.be.server.core.payment.repository.PaymentRepository
 import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
@@ -79,7 +78,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         // 테스트용 주문 생성 (결제 대기 상태로)
         testOrder = Order(userId = testUserId, usedCouponId = null)
         testOrder.addOrderItem(testProduct.productId, 2, testProduct.price)
-        testOrder.prepareProducts()
+        testOrder.reservedProducts()
         testOrder.readyForPayment()
         orderRepository.save(testOrder)
 
@@ -139,10 +138,10 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
                 stock = 100,
                 couponStatus = CouponStatus.OPENED,
             )
-        
+
         // 쿠폰을 DB에 저장
         couponRepository.save(discountCoupon)
-        
+
         // 사용자 쿠폰 생성 및 저장
         val userCoupon = UserCoupon.issueCoupon(testUserId, discountCoupon.couponId)
         userCouponRepository.save(userCoupon)
@@ -150,7 +149,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         // 쿠폰이 설정된 주문 생성
         val orderWithCoupon = Order(userId = testUserId, usedCouponId = userCoupon.userCouponId)
         orderWithCoupon.addOrderItem(testProduct.productId, 2, testProduct.price)
-        orderWithCoupon.prepareProducts()
+        orderWithCoupon.reservedProducts()
         orderWithCoupon.readyForPayment()
         orderRepository.save(orderWithCoupon)
 
@@ -361,7 +360,7 @@ class PaymentServiceIntegrationTest : IntegrationTestSupport() {
         // given - 새로운 주문 생성 (결제하지 않음)
         val newOrder = Order(userId = testUserId, usedCouponId = null)
         newOrder.addOrderItem(testProduct.productId, 1, testProduct.price)
-        newOrder.prepareProducts()
+        newOrder.reservedProducts()
         newOrder.readyForPayment()
         val savedOrder = orderRepository.save(newOrder)
 

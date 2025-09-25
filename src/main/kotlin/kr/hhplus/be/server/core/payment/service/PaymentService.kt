@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional
  * 외부 서비스 호출 (포인트, 쿠폰)
  */
 @Service
-@Transactional
 class PaymentService(
     private val paymentRepository: PaymentRepository,
     private val pointService: PointServiceInterface,
@@ -41,10 +40,10 @@ class PaymentService(
         val originalAmount = order.calculateTotalAmount()
 
         try {
-            // 1. 쿠폰 처리 (있을 경우)
+            // 1. 쿠폰 할인 금액 조회
             var discountAmount = 0L
             if (order.usedCouponId != null) {
-                val usedCoupon = couponService.useCoupon(order.usedCouponId)
+                val usedCoupon = couponService.getUserCoupon(order.usedCouponId)
                 val couponInfo = couponService.getCouponInfo(usedCoupon.couponId)
                 discountAmount = couponInfo.discountAmount
             }
@@ -52,14 +51,19 @@ class PaymentService(
             // 2. 결제 생성
             val payment = Payment.createPayment(originalAmount, discountAmount)
 
-            // 3. 포인트 결제 처리
+            // 3. 쿠폰 사용 처리
+            if (order.usedCouponId != null) {
+                couponService.useCoupon(order.usedCouponId)
+            }
+
+            // 4. 포인트 결제 처리
             pointService.usePoint(order.userId, payment.finalAmount)
 
-            // 4. 결제 성공 처리
+            // 5. 결제 성공 처리
             payment.success()
             val savedPayment = paymentRepository.save(payment)
 
-            // 5. 결제 성공 이벤트 발행
+            // 6. 결제 성공 이벤트 발행
             paymentEventPublisher.publishPaymentSucceeded(
                 orderId = order.orderId,
                 paymentId = savedPayment.paymentId,
@@ -78,9 +82,10 @@ class PaymentService(
                 orderId = order.orderId,
                 paymentId = savedPayment.paymentId,
                 failureReason = e.message ?: "Payment failed",
-                orderItems = order.orderItems.map {
-                    OrderItemCommand(it.productId, it.quantity)
-                },
+                orderItems =
+                    order.orderItems.map {
+                        OrderItemCommand(it.productId, it.quantity)
+                    },
             )
 
             throw e

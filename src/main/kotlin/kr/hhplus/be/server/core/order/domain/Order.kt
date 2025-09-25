@@ -80,9 +80,9 @@ class Order(
 
     /**
      * 상품 준비 완료 처리
-     * 주문이 요청된 후 상품을 준비하는 단계로 전환
+     * 주문이 요청된 후 상품 준비 완료 상태로 전환
      */
-    fun prepareProducts() {
+    fun reservedProducts() {
         changeStatus(OrderStatus.PRODUCT_READY)
     }
 

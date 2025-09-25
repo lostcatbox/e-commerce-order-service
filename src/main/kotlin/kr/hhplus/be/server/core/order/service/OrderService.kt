@@ -13,11 +13,10 @@ import org.springframework.transaction.annotation.Transactional
  * 주문 서비스 구현체
  */
 @Service
-@Transactional
 class OrderService(
     private val orderRepository: OrderRepository,
     private val productRepository: ProductRepository,
-    private val orderEventPublisher: OrderEventPublisherInterface
+    private val orderEventPublisher: OrderEventPublisherInterface,
 ) : OrderServiceInterface {
     /**
      * 주문 생성 (Aggregate Root 패턴)
@@ -49,21 +48,22 @@ class OrderService(
         order.validNotEmptyOrderItems()
 
         val savedOrder = orderRepository.save(order)
-        
+
         // OrderCreatedEvent 발행하여 Event-Driven 처리 시작
-        val orderItemEventData = savedOrder.orderItems.map { orderItem ->
-            kr.hhplus.be.server.core.order.event.OrderItemEventData(
-                productId = orderItem.productId,
-                quantity = orderItem.quantity,
-                unitPrice = orderItem.unitPrice
-            )
-        }
-        
+        val orderItemEventData =
+            savedOrder.orderItems.map { orderItem ->
+                kr.hhplus.be.server.core.order.event.OrderItemEventData(
+                    productId = orderItem.productId,
+                    quantity = orderItem.quantity,
+                    unitPrice = orderItem.unitPrice,
+                )
+            }
+
         orderEventPublisher.publishOrderCreated(
             orderId = savedOrder.orderId,
             userId = savedOrder.userId,
             orderItems = orderItemEventData,
-            usedCouponId = savedOrder.usedCouponId
+            usedCouponId = savedOrder.usedCouponId,
         )
 
         return savedOrder
@@ -73,26 +73,27 @@ class OrderService(
      * 주문 상태를 상품 준비 완료로 변경
      */
     @Transactional
-    override fun changeProductReady(orderId: Long): Order {
+    override fun changeProductReserved(orderId: Long): Order {
         val order = getOrder(orderId)
-        order.prepareProducts()
+        order.reservedProducts()
         val savedOrder = orderRepository.save(order)
-        
+
         // OrderProductReadyEvent 발행
-        val orderItemEventData = savedOrder.orderItems.map { orderItem ->
-            kr.hhplus.be.server.core.order.event.OrderItemEventData(
-                productId = orderItem.productId,
-                quantity = orderItem.quantity,
-                unitPrice = orderItem.unitPrice
-            )
-        }
-        
-        orderEventPublisher.publishOrderProductReady(
+        val orderItemEventData =
+            savedOrder.orderItems.map { orderItem ->
+                kr.hhplus.be.server.core.order.event.OrderItemEventData(
+                    productId = orderItem.productId,
+                    quantity = orderItem.quantity,
+                    unitPrice = orderItem.unitPrice,
+                )
+            }
+
+        orderEventPublisher.publishOrderProductReaserved(
             orderId = savedOrder.orderId,
             userId = savedOrder.userId,
-            orderItems = orderItemEventData
+            orderItems = orderItemEventData,
         )
-        
+
         return savedOrder
     }
 
@@ -104,44 +105,20 @@ class OrderService(
         val order = getOrder(orderId)
         order.readyForPayment()
         val savedOrder = orderRepository.save(order)
-        
+
         // OrderPaymentReadyEvent 발행
         val totalAmount = savedOrder.calculateTotalAmount()
         val discountAmount = 0L // TODO: 실제 할인 금액은 쿠폰 처리에서 계산 필요
         val finalAmount = totalAmount - discountAmount
-        
-        orderEventPublisher.publishOrderPaymentReady(
-            orderId = savedOrder.orderId,
-            userId = savedOrder.userId,
-            totalAmount = totalAmount,
-            discountAmount = discountAmount,
-            finalAmount = finalAmount
-        )
-        
-        return savedOrder
-    }
 
-    /**
-     * 주문 상태를 결제 대기로 변경 (할인 금액 포함)
-     */
-    @Transactional
-    override fun changePaymentReady(orderId: Long, discountAmount: Long): Order {
-        val order = getOrder(orderId)
-        order.readyForPayment()
-        val savedOrder = orderRepository.save(order)
-        
-        // OrderPaymentReadyEvent 발행 (할인 금액 포함)
-        val totalAmount = savedOrder.calculateTotalAmount()
-        val finalAmount = totalAmount - discountAmount
-        
         orderEventPublisher.publishOrderPaymentReady(
             orderId = savedOrder.orderId,
             userId = savedOrder.userId,
             totalAmount = totalAmount,
             discountAmount = discountAmount,
-            finalAmount = finalAmount
+            finalAmount = finalAmount,
         )
-        
+
         return savedOrder
     }
 
@@ -161,8 +138,8 @@ class OrderService(
     /**
      * 주문 상태를 완료로 변경
      *
-     * 주문이 완료되면 OrderCompletedEvent와 함께 
-     * 10번, 11번 기능을 위한 별도 통계 이벤트들을 발행합니다.
+     * 주문이 완료되면 OrderCompletedEvent 이벤트가 발행되어
+     * 통계 서비스에서 매출 집계 등의 처리를 할 수 있도록 함
      */
     @Transactional
     override fun changeCompleted(orderId: Long): Order {
@@ -191,7 +168,11 @@ class OrderService(
      * 주문 상태를 실패로 변경 (실패 이벤트 발행 포함)
      */
     @Transactional
-    override fun changeFailed(orderId: Long, reason: String, failedStep: String): Order {
+    override fun changeFailed(
+        orderId: Long,
+        reason: String,
+        failedStep: String,
+    ): Order {
         val order = getOrder(orderId)
         order.fail()
         val savedOrder = orderRepository.save(order)
@@ -200,7 +181,7 @@ class OrderService(
         orderEventPublisher.publishOrderFailed(
             orderId = savedOrder.orderId,
             failureReason = reason,
-            failedStep = failedStep
+            failedStep = failedStep,
         )
 
         return savedOrder

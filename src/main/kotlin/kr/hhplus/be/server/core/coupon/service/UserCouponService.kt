@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * 사용자 쿠폰 서비스 구현체 (내부 전용)
- * 
+ *
  * 설명:
  * - CouponService에서만 사용되는 내부 서비스
  * - 외부에서 직접 사용하지 않고 CouponService를 통해서만 접근
@@ -17,6 +17,17 @@ import org.springframework.transaction.annotation.Transactional
 class UserCouponService(
     private val userCouponRepository: UserCouponRepository,
 ) {
+    /**
+     * 사용자 쿠폰 단건 조회
+     */
+    @Transactional(readOnly = true)
+    fun getUserCoupon(userCouponId: Long): UserCoupon {
+        validateUserCouponId(userCouponId)
+
+        return userCouponRepository.findByUserCouponId(userCouponId)
+            ?: throw IllegalArgumentException("존재하지 않는 사용자 쿠폰입니다. 사용자 쿠폰 ID: $userCouponId")
+    }
+
     /**
      * 사용자 쿠폰 발급
      */
@@ -79,7 +90,10 @@ class UserCouponService(
     /**
      * 사용자와 쿠폰 ID로 사용자 쿠폰 조회
      */
-    fun findByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon? {
+    fun findByUserIdAndCouponId(
+        userId: Long,
+        couponId: Long,
+    ): UserCoupon? {
         validateUserId(userId)
         validateCouponId(couponId)
         return userCouponRepository.findByUserIdAndCouponId(userId, couponId)

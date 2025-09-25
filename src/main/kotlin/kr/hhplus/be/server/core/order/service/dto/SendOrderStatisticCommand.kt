@@ -7,5 +7,4 @@ data class SendOrderStatisticCommand(
 ) {
     val orderId: Long = finalOrder.orderId
     val userId: Long = finalOrder.userId
-    val orderItemIdAndQuantity: Map<Long, Int> = finalOrder.orderItems.associate { it -> it.productId to it.quantity }
 }

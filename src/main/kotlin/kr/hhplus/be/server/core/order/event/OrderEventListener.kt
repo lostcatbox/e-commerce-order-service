@@ -2,7 +2,6 @@ package kr.hhplus.be.server.core.order.event
 
 import kr.hhplus.be.server.core.order.service.OrderServiceInterface
 import kr.hhplus.be.server.core.order.service.OrderStatisticsServiceInterface
-import kr.hhplus.be.server.core.order.service.dto.SendOrderStatisticCommand
 import kr.hhplus.be.server.core.payment.event.PaymentFailedEvent
 import kr.hhplus.be.server.core.payment.event.PaymentSucceededEvent
 import kr.hhplus.be.server.core.product.event.ProductStockInsufficientEvent
@@ -10,8 +9,6 @@ import kr.hhplus.be.server.core.product.event.ProductStockReservedEvent
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
@@ -23,33 +20,14 @@ import org.springframework.transaction.event.TransactionalEventListener
 @Component
 class OrderEventListener(
     private val orderService: OrderServiceInterface,
-    private val orderStatisticsService: OrderStatisticsServiceInterface,
 ) {
     private val log = LoggerFactory.getLogger(OrderEventListener::class.java)
-
-    /**
-     * 주문 생성 성공 시 주문 상태를 상품 준비로 변경
-     */
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun handleOrderCreated(event: OrderCreatedEvent) {
-        try {
-            log.info("주문 상품 준비 시작 - 주문 ID: {}", event.orderId)
-            orderService.changeProductReady(event.orderId)
-            log.info("주문 상품 준비 완료 - 주문 ID: {}", event.orderId)
-        } catch (e: Exception) {
-            log.error("주문 상품 준비 실패 - 주문 ID: {}, 오류: {}", event.orderId, e.message)
-            orderService.changeFailed(event.orderId, e.message ?: "Product ready failed", "PRODUCT_READY")
-        }
-    }
 
     /**
      * 결제 성공 시 주문 완료 처리
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun handlePaymentSucceeded(event: PaymentSucceededEvent) {
         try {
             log.info("주문 완료 처리 시작 - 주문 ID: {}, 결제 ID: {}", event.orderId, event.paymentId)
@@ -68,20 +46,44 @@ class OrderEventListener(
     }
 
     /**
-     * 재고 확보 성공 시 주문 상태를 결제 대기로 변경
+     * 재고 확보 성공 시 주문 상태 상품 준비 완료로 변경
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun handleProductStockReserved(event: ProductStockReservedEvent) {
         try {
+            log.info("주문 상품 준비 완료로 변경 시작 - 주문 ID: {}", event.orderId)
+            // 재고 확보 성공 후
+            orderService.changeProductReserved(event.orderId)
+            log.info("주문 상품 준비 완료로 변경 완료 - 주문 ID: {}", event.orderId)
+        } catch (e: Exception) {
+            log.error("주문 상품 준비 완료로 변경 실패 - 주문 ID: {}, 오류: {}", event.orderId, e.message, e)
+            try {
+                orderService.changeFailed(event.orderId, e.message ?: "Payment ready failed", "PAYMENT_READY")
+            } catch (ex: Exception) {
+                log.error("주문 상품 준비 완료로 변경 중 오류 발생 - 주문 ID: {}, 오류: {}", event.orderId, ex.message, ex)
+            }
+        }
+    }
+
+    /**
+     * 주문 상태가 상품 준비 완료로 변경 시 주문 상태를 결제 대기로 변경
+     */
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun handleProductStockReserved(event: OrderProductReservedEvent) {
+        try {
             log.info("주문 결제 대기 시작 - 주문 ID: {}", event.orderId)
-            // 재고 확보 성공 후 바로 결제 대기 상태로 변경 (쿠폰 처리는 PaymentService에서)
-            orderService.changePaymentReady(event.orderId, 0L) // 할인 금액은 PaymentService에서 계산
+            // 재고 확보 성공 후 바로 결제 대기 상태로 변경
+            orderService.changePaymentReady(event.orderId)
             log.info("주문 결제 대기 완료 - 주문 ID: {}", event.orderId)
         } catch (e: Exception) {
-            log.error("주문 결제 대기 실패 - 주문 ID: {}, 오류: {}", event.orderId, e.message)
-            orderService.changeFailed(event.orderId, e.message ?: "Payment ready failed", "PAYMENT_READY")
+            log.error("주문 결제 대기 실패 - 주문 ID: {}, 오류: {}", event.orderId, e.message, e)
+            try {
+                orderService.changeFailed(event.orderId, e.message ?: "Payment ready failed", "PAYMENT_READY")
+            } catch (ex: Exception) {
+                log.error("주문 실패 처리 중 오류 발생 - 주문 ID: {}, 오류: {}", event.orderId, ex.message, ex)
+            }
         }
     }
 
@@ -90,7 +92,6 @@ class OrderEventListener(
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun handleProductStockInsufficient(event: ProductStockInsufficientEvent) {
         orderService.changeFailed(event.orderId, event.reason, "PRODUCT_STOCK")
     }
@@ -100,9 +101,7 @@ class OrderEventListener(
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun handlePaymentFailed(event: PaymentFailedEvent) {
         orderService.changeFailed(event.orderId, event.failureReason, "PAYMENT")
     }
-
 }

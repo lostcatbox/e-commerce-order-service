@@ -2,7 +2,6 @@ package kr.hhplus.be.server.core.order.service
 
 import jakarta.persistence.EntityManager
 import kr.hhplus.be.server.IntegrationTestSupport
-import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
 import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
@@ -175,7 +174,7 @@ class OrderServiceIntegrationTest : IntegrationTestSupport() {
         val order = orderService.createOrder(command)
 
         // when
-        val result = orderService.changeProductReady(order.orderId)
+        val result = orderService.changeProductReserved(order.orderId)
 
         // then
         assertEquals(OrderStatus.PRODUCT_READY, result.getOrderStatus())
@@ -197,7 +196,7 @@ class OrderServiceIntegrationTest : IntegrationTestSupport() {
         val orderItems = listOf(OrderItemCommand(testProduct1.productId, 1))
         val command = CreateOrderCommand(testUserId, orderItems)
         val order = orderService.createOrder(command)
-        orderService.changeProductReady(order.orderId)
+        orderService.changeProductReserved(order.orderId)
 
         // when
         val result = orderService.changePaymentReady(order.orderId)
@@ -222,7 +221,7 @@ class OrderServiceIntegrationTest : IntegrationTestSupport() {
         val orderItems = listOf(OrderItemCommand(testProduct1.productId, 1))
         val command = CreateOrderCommand(testUserId, orderItems)
         val order = orderService.createOrder(command)
-        orderService.changeProductReady(order.orderId)
+        orderService.changeProductReserved(order.orderId)
         orderService.changePaymentReady(order.orderId)
         val paymentId = 100L
 
@@ -251,7 +250,7 @@ class OrderServiceIntegrationTest : IntegrationTestSupport() {
         val orderItems = listOf(OrderItemCommand(testProduct1.productId, 1))
         val command = CreateOrderCommand(testUserId, orderItems)
         val order = orderService.createOrder(command)
-        orderService.changeProductReady(order.orderId)
+        orderService.changeProductReserved(order.orderId)
         orderService.changePaymentReady(order.orderId)
         orderService.changePaymentComplete(order.orderId, 100L)
 
@@ -409,7 +408,7 @@ class OrderServiceIntegrationTest : IntegrationTestSupport() {
         // when & then
         val exception =
             assertThrows<IllegalArgumentException> {
-                orderService.changeProductReady(nonExistentOrderId)
+                orderService.changeProductReserved(nonExistentOrderId)
             }
 
         assertTrue(exception.message!!.contains("존재하지 않는 주문입니다"))

@@ -11,7 +11,7 @@ interface OrderEventPublisherInterface {
         orderId: Long,
         userId: Long,
         orderItems: List<OrderItemEventData>,
-        usedCouponId: Long?
+        usedCouponId: Long?,
     )
 
     /**
@@ -22,10 +22,10 @@ interface OrderEventPublisherInterface {
     /**
      * 주문 상품 준비 완료 이벤트 발행
      */
-    fun publishOrderProductReady(
+    fun publishOrderProductReaserved(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>
+        orderItems: List<OrderItemEventData>,
     )
 
     /**
@@ -36,7 +36,7 @@ interface OrderEventPublisherInterface {
         userId: Long,
         totalAmount: Long,
         discountAmount: Long,
-        finalAmount: Long
+        finalAmount: Long,
     )
 
     /**
@@ -45,7 +45,6 @@ interface OrderEventPublisherInterface {
     fun publishOrderFailed(
         orderId: Long,
         failureReason: String,
-        failedStep: String
+        failedStep: String,
     )
-
 }

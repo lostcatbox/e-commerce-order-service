@@ -111,7 +111,7 @@ class OrderTest {
             }
 
         // when
-        order.prepareProducts()
+        order.reservedProducts()
 
         // then
         assertEquals(OrderStatus.PRODUCT_READY, order.getOrderStatus())
@@ -125,7 +125,7 @@ class OrderTest {
             Order(orderId = 1L, userId = 1L).apply {
                 addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
             }
-        order.prepareProducts() // PRODUCT_READY 상태로 먼저 변경
+        order.reservedProducts() // PRODUCT_READY 상태로 먼저 변경
 
         // when
         order.readyForPayment()
@@ -142,7 +142,7 @@ class OrderTest {
             Order(orderId = 1L, userId = 1L).apply {
                 addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
             }
-        order.prepareProducts()
+        order.reservedProducts()
         order.readyForPayment() // PAYMENT_READY 상태로 변경
         val paymentId = 100L
 
@@ -162,7 +162,7 @@ class OrderTest {
             Order(orderId = 1L, userId = 1L).apply {
                 addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
             }
-        order.prepareProducts()
+        order.reservedProducts()
         order.readyForPayment()
         order.paid(100L) // PAYMENT_COMPLETED 상태로 변경
 
@@ -230,7 +230,7 @@ class OrderTest {
             Order(orderId = 1L, userId = 1L).apply {
                 addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
             }
-        order.prepareProducts()
+        order.reservedProducts()
         order.readyForPayment()
         order.paid(100L)
         order.complete()
@@ -252,7 +252,7 @@ class OrderTest {
             Order(orderId = 1L, userId = 1L).apply {
                 addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
             }
-        order.prepareProducts()
+        order.reservedProducts()
         order.readyForPayment()
         val invalidPaymentId = 0L
 
@@ -293,7 +293,7 @@ class OrderTest {
 
         // when & then
         assertThrows<IllegalStateException> {
-            order.prepareProducts()
+            order.reservedProducts()
         }
     }
 
