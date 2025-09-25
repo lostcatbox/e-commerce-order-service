@@ -388,7 +388,6 @@ catch (e: Exception) {
 // 2. PaymentEventListener에서 비동기 재고 복구
 @Async
 @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-@Transactional(propagation = Propagation.REQUIRES_NEW)
 fun handlePaymentFailedStockRestore(event: PaymentFailedEvent) {
     try {
         // 별도 트랜잭션에서 재고 복구
@@ -411,11 +410,13 @@ fun handlePaymentFailedStockRestore(event: PaymentFailedEvent) {
 ## Event-Driven에서 @EventListener vs @TransactionalEventListener 사용 규칙
 
 ### 1️⃣ @TransactionalEventListener + @Async
+- @TransactionalEventListener는 @Transactional과 함께 사용 금지
+  - 이유 : @TransactionalEventListener는 이미 트랜잭션 경계 내에서 호출되므로 중복
+- @Async와 함께 사용하여 독립 트랜잭션 보장
 ```kotlin
 // ✅ 표준 패턴: 모든 비즈니스 로직 처리
 @Async
 @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-@Transactional(propagation = Propagation.REQUIRES_NEW)
 fun handleBusinessEvent(event: DomainEvent) {
     // 비즈니스 로직 처리
 }
@@ -460,14 +461,12 @@ class EventDrivenTransactionExamples {
     // 1. 도메인 로직 처리: @Async + 독립 트랜잭션
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun handleBusinessLogic(event: UserValidatedEvent) {
         orderService.changeToProductReady(event.orderId)
     }
 
     // 2. 로깅/모니터링: 트랜잭션 없음 (빠른 처리)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun handleLogging(event: OrderFailedEvent) {
         logger.error("주문 실패: ${event.orderId}, 사유: ${event.failureReason}")
     }
@@ -475,7 +474,6 @@ class EventDrivenTransactionExamples {
     // 3. 보상 트랜잭션: @Async + 독립 트랜잭션
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun handleCompensation(event: PaymentFailedEvent) {
         compensationService.startCompensation(event.orderId)
     }
