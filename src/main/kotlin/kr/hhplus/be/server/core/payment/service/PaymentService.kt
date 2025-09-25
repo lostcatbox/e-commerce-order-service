@@ -43,7 +43,7 @@ class PaymentService(
             // 1. 쿠폰 할인 금액 조회
             var discountAmount = 0L
             if (order.usedCouponId != null) {
-                val usedCoupon = couponService.getCouponInfo(order.usedCouponId)
+                val usedCoupon = couponService.getUserCoupon(order.usedCouponId)
                 val couponInfo = couponService.getCouponInfo(usedCoupon.couponId)
                 discountAmount = couponInfo.discountAmount
             }

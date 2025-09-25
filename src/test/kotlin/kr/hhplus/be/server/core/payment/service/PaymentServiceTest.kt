@@ -155,7 +155,7 @@ class PaymentServiceTest {
                 stock = 100,
                 couponStatus = CouponStatus.OPENED,
             )
-
+        whenever(couponService.getUserCoupon(userCouponId)).thenReturn(mockUserCoupon)
         whenever(couponService.useCoupon(userCouponId)).thenReturn(mockUserCoupon)
         whenever(couponService.getCouponInfo(couponId)).thenReturn(mockCoupon)
 

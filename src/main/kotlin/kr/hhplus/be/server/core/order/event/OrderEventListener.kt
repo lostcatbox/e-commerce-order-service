@@ -20,7 +20,6 @@ import org.springframework.transaction.event.TransactionalEventListener
 @Component
 class OrderEventListener(
     private val orderService: OrderServiceInterface,
-    private val orderStatisticsService: OrderStatisticsServiceInterface,
 ) {
     private val log = LoggerFactory.getLogger(OrderEventListener::class.java)
 
