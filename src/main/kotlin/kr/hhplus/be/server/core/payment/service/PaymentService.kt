@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional
  * 외부 서비스 호출 (포인트, 쿠폰)
  */
 @Service
-@Transactional
 class PaymentService(
     private val paymentRepository: PaymentRepository,
     private val pointService: PointServiceInterface,

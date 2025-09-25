@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional
  * 상품 서비스 구현체
  */
 @Service
-@Transactional(readOnly = true)
 class ProductService(
     private val productRepository: ProductRepository,
     private val productEventPublisher: ProductEventPublisherInterface,
@@ -22,6 +21,7 @@ class ProductService(
     /**
      * 상품 정보 조회
      */
+    @Transactional(readOnly = true)
     override fun getProduct(productId: Long): Product {
         validateProductId(productId)
 
@@ -86,6 +86,7 @@ class ProductService(
     /**
      * 주문 상품 재고 처리 및 이벤트 발행
      */
+    @Transactional
     fun processOrderProductStock(
         orderId: Long,
         command: SaleProductsCommand,

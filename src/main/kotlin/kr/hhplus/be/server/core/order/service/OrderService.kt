@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional
  * 주문 서비스 구현체
  */
 @Service
-@Transactional
 class OrderService(
     private val orderRepository: OrderRepository,
     private val productRepository: ProductRepository,
@@ -110,33 +109,6 @@ class OrderService(
         // OrderPaymentReadyEvent 발행
         val totalAmount = savedOrder.calculateTotalAmount()
         val discountAmount = 0L // TODO: 실제 할인 금액은 쿠폰 처리에서 계산 필요
-        val finalAmount = totalAmount - discountAmount
-
-        orderEventPublisher.publishOrderPaymentReady(
-            orderId = savedOrder.orderId,
-            userId = savedOrder.userId,
-            totalAmount = totalAmount,
-            discountAmount = discountAmount,
-            finalAmount = finalAmount,
-        )
-
-        return savedOrder
-    }
-
-    /**
-     * 주문 상태를 결제 대기로 변경 (할인 금액 포함)
-     */
-    @Transactional
-    override fun changePaymentReady(
-        orderId: Long,
-        discountAmount: Long,
-    ): Order {
-        val order = getOrder(orderId)
-        order.readyForPayment()
-        val savedOrder = orderRepository.save(order)
-
-        // OrderPaymentReadyEvent 발행 (할인 금액 포함)
-        val totalAmount = savedOrder.calculateTotalAmount()
         val finalAmount = totalAmount - discountAmount
 
         orderEventPublisher.publishOrderPaymentReady(

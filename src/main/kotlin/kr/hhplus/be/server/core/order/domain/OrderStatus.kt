@@ -22,7 +22,7 @@ enum class OrderStatus(
             REQUESTED -> newStatus in listOf(PRODUCT_READY, FAILED)
             PRODUCT_READY -> newStatus in listOf(PAYMENT_READY, FAILED)
             PAYMENT_READY -> newStatus in listOf(PAYMENT_COMPLETED, FAILED)
-            PAYMENT_COMPLETED -> newStatus in listOf(COMPLETED, FAILED)
+            PAYMENT_COMPLETED -> newStatus in listOf(COMPLETED, FAILED, FAILED)
             COMPLETED -> false // 완료된 주문은 상태 변경 불가
             FAILED -> false // 실패한 주문은 상태 변경 불가
         }
