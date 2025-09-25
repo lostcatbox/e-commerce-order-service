@@ -661,3 +661,25 @@ OrderStatisticsEventListener + ProductSaleStatisticsEventListener
 - **장애 격리**: 한 도메인 실패가 다른 도메인에 영향 없음
 
 이 설계를 통해 현재 모놀리스 환경에서도 도메인별 독립성을 확보하고, 향후 MSA 전환 시에도 최소한의 변경으로 대응할 수 있습니다.
+
+
+## 지식 정보 기록
+### 어떤 사람이 다음 트랜잭션의 범위를 갖는것이 어떠냐 라는 질문을 하였다.
+- 목적 : 주문 요청 시 주문 상태 변경도 결국 트랜잭션에 묶여야한다.
+- 예시
+  - OrderCreatedEvent
+    - 주문이 정상적으로 생성된 후 발행
+  - ProductStockReservedEvent
+    - 상품 재고 확인 및 차감 수행
+    - 주문이 상품 준비 완료 상태로 변경 수행
+  - PaymentSucceededEvent
+    - 주문이 결제 대기 상태로 변경 수행
+    - 쿠폰 사용 처리 수행
+    - 포인트 결제 처리 수행
+    - 주문이 결제 성공 상태로 변경 수행
+    - 결제가 성공적으로 완료된 후 발행
+  - OrderCompletedEvent
+    - 주문이 주문 완료 상태로 후 수행
+- 채택하지 않은 이유(단점) :
+  - 트랜잭션 정합성은 보장할수 있겠지만, 유지보수성이 낮음
+  - 예시 : Payment Service에서는 OrderService 주소를 알아야 한다. 결합성 생김.
