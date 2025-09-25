@@ -108,4 +108,11 @@ interface CouponServiceInterface {
      * @return 사용된 UserCoupon
      */
     fun useCoupon(userCouponId: Long): UserCoupon
+
+    /**
+     * 사용자 쿠폰 조회
+     * @param usedCouponId 사용자 쿠폰 ID
+     * @return UserCoupon
+     */
+    fun getUserCoupon(usedCouponId: Long): UserCoupon
 }

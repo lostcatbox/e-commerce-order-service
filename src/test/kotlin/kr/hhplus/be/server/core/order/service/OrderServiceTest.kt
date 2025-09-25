@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.core.order.service
 
 import kr.hhplus.be.server.core.order.domain.Order
-import kr.hhplus.be.server.core.order.domain.OrderItem
 import kr.hhplus.be.server.core.order.domain.OrderStatus
 import kr.hhplus.be.server.core.order.repository.OrderRepository
 import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
@@ -142,13 +141,13 @@ class OrderServiceTest {
 
         val updatedOrder = Order(userId = 1L)
         updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        updatedOrder.prepareProducts()
+        updatedOrder.reservedProducts()
 
         whenever(orderRepository.findByOrderId(orderId)).thenReturn(existingOrder)
         whenever(orderRepository.save(any<Order>())).thenReturn(updatedOrder)
 
         // when
-        val result = orderService.changeProductReady(orderId)
+        val result = orderService.changeProductReserved(orderId)
 
         // then
         assertEquals(OrderStatus.PRODUCT_READY, result.getOrderStatus())
@@ -163,11 +162,11 @@ class OrderServiceTest {
         val orderId = 1L
         val existingOrder = Order(userId = 1L)
         existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        existingOrder.prepareProducts() // PRODUCT_READY로 설정
+        existingOrder.reservedProducts() // PRODUCT_READY로 설정
 
         val updatedOrder = Order(userId = 1L)
         updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        updatedOrder.prepareProducts()
+        updatedOrder.reservedProducts()
         updatedOrder.readyForPayment()
 
         whenever(orderRepository.findByOrderId(orderId)).thenReturn(existingOrder)
@@ -190,12 +189,12 @@ class OrderServiceTest {
         val paymentId = 200L
         val existingOrder = Order(userId = 1L)
         existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        existingOrder.prepareProducts()
+        existingOrder.reservedProducts()
         existingOrder.readyForPayment() // PAYMENT_READY로 설정
 
         val updatedOrder = Order(userId = 1L)
         updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        updatedOrder.prepareProducts()
+        updatedOrder.reservedProducts()
         updatedOrder.readyForPayment()
         updatedOrder.paid(paymentId)
 
@@ -218,13 +217,13 @@ class OrderServiceTest {
         val orderId = 1L
         val existingOrder = Order(userId = 1L)
         existingOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        existingOrder.prepareProducts()
+        existingOrder.reservedProducts()
         existingOrder.readyForPayment()
         existingOrder.paid(200L) // PAYMENT_COMPLETED로 설정
 
         val updatedOrder = Order(userId = 1L)
         updatedOrder.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
-        updatedOrder.prepareProducts()
+        updatedOrder.reservedProducts()
         updatedOrder.readyForPayment()
         updatedOrder.paid(200L)
         updatedOrder.complete()

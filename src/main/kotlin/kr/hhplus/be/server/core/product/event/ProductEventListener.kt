@@ -1,7 +1,8 @@
 package kr.hhplus.be.server.core.product.event
 
 import kr.hhplus.be.server.core.order.event.OrderCompletedEvent
-import kr.hhplus.be.server.core.order.event.OrderProductReadyEvent
+import kr.hhplus.be.server.core.order.event.OrderCreatedEvent
+import kr.hhplus.be.server.core.order.event.OrderProductReservedEvent
 import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 import kr.hhplus.be.server.core.product.service.ProductService
 import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
@@ -25,7 +26,7 @@ class ProductEventListener(
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun handleOrderProductReady(event: OrderProductReadyEvent) {
+    fun handleOrderProductReady(event: OrderCreatedEvent) {
         try {
             log.info("재고 처리 시작 - 주문 ID: {}", event.orderId)
 

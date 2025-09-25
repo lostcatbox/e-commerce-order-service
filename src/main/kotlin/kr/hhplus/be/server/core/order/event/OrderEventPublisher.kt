@@ -8,22 +8,21 @@ import org.springframework.stereotype.Component
  */
 @Component
 class OrderEventPublisher(
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) : OrderEventPublisherInterface {
-
     override fun publishOrderCreated(
         orderId: Long,
         userId: Long,
         orderItems: List<OrderItemEventData>,
-        usedCouponId: Long?
+        usedCouponId: Long?,
     ) {
         applicationEventPublisher.publishEvent(
             OrderCreatedEvent(
                 orderId = orderId,
                 userId = userId,
                 orderItems = orderItems,
-                usedCouponId = usedCouponId
-            )
+                usedCouponId = usedCouponId,
+            ),
         )
     }
 
@@ -31,17 +30,17 @@ class OrderEventPublisher(
         applicationEventPublisher.publishEvent(event)
     }
 
-    override fun publishOrderProductReady(
+    override fun publishOrderProductReaserved(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>
+        orderItems: List<OrderItemEventData>,
     ) {
         applicationEventPublisher.publishEvent(
-            OrderProductReadyEvent(
+            OrderProductReservedEvent(
                 orderId = orderId,
                 userId = userId,
-                orderItems = orderItems
-            )
+                orderItems = orderItems,
+            ),
         )
     }
 
@@ -50,7 +49,7 @@ class OrderEventPublisher(
         userId: Long,
         totalAmount: Long,
         discountAmount: Long,
-        finalAmount: Long
+        finalAmount: Long,
     ) {
         applicationEventPublisher.publishEvent(
             OrderPaymentReadyEvent(
@@ -58,23 +57,22 @@ class OrderEventPublisher(
                 userId = userId,
                 totalAmount = totalAmount,
                 discountAmount = discountAmount,
-                finalAmount = finalAmount
-            )
+                finalAmount = finalAmount,
+            ),
         )
     }
 
     override fun publishOrderFailed(
         orderId: Long,
         failureReason: String,
-        failedStep: String
+        failedStep: String,
     ) {
         applicationEventPublisher.publishEvent(
             OrderFailedEvent(
                 orderId = orderId,
                 failureReason = failureReason,
-                failedStep = failedStep
-            )
+                failedStep = failedStep,
+            ),
         )
     }
-
 }

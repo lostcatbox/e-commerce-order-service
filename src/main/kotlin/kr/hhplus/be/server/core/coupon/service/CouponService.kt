@@ -52,17 +52,17 @@ class CouponService(
 
             // 2. 쿠폰 정보 조회 및 검증
             val coupon = getCouponInfo(couponId)
-            
+
             // 3. 쿠폰 상태 검증 (열린 상태인지 확인)
             if (!coupon.isOpened()) {
                 throw IllegalArgumentException("쿠폰이 사용 가능한 상태가 아닙니다. 쿠폰 ID: $couponId")
             }
-            
+
             // 4. 쿠폰 재고 확인
             if (!coupon.hasStock()) {
                 throw IllegalArgumentException("쿠폰 재고가 부족합니다. 쿠폰 ID: $couponId")
             }
-            
+
             // 5. 중복 발급 확인
             val existingUserCoupon = userCouponService.findByUserIdAndCouponId(userId, couponId)
             if (existingUserCoupon != null) {
@@ -176,6 +176,12 @@ class CouponService(
      */
     @Transactional
     override fun useCoupon(userCouponId: Long): UserCoupon = userCouponService.useCoupon(userCouponId)
+
+    /**
+     * 사용자 쿠폰 조회
+     */
+    @Transactional(readOnly = true)
+    override fun getUserCoupon(userCouponId: Long): UserCoupon = userCouponService.getUserCoupon(userCouponId)
 
     // ===== 내부 헬퍼 메서드들 =====
 

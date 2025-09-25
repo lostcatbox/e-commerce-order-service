@@ -28,23 +28,6 @@ class OrderEventListener(
     private val log = LoggerFactory.getLogger(OrderEventListener::class.java)
 
     /**
-     * 주문 생성 성공 시 주문 상태를 상품 준비로 변경
-     */
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun handleOrderCreated(event: OrderCreatedEvent) {
-        try {
-            log.info("주문 상품 준비 시작 - 주문 ID: {}", event.orderId)
-            orderService.changeProductReady(event.orderId)
-            log.info("주문 상품 준비 완료 - 주문 ID: {}", event.orderId)
-        } catch (e: Exception) {
-            log.error("주문 상품 준비 실패 - 주문 ID: {}, 오류: {}", event.orderId, e.message)
-            orderService.changeFailed(event.orderId, e.message ?: "Product ready failed", "PRODUCT_READY")
-        }
-    }
-
-    /**
      * 결제 성공 시 주문 완료 처리
      */
     @Async
@@ -76,7 +59,7 @@ class OrderEventListener(
     fun handleProductStockReserved(event: ProductStockReservedEvent) {
         try {
             log.info("주문 결제 대기 시작 - 주문 ID: {}", event.orderId)
-            // 재고 확보 성공 후 바로 결제 대기 상태로 변경 (쿠폰 처리는 PaymentService에서)
+            // 재고 확보 성공 후 바로 결제 대기 상태로 변경
             orderService.changePaymentReady(event.orderId, 0L) // 할인 금액은 PaymentService에서 계산
             log.info("주문 결제 대기 완료 - 주문 ID: {}", event.orderId)
         } catch (e: Exception) {
@@ -104,5 +87,4 @@ class OrderEventListener(
     fun handlePaymentFailed(event: PaymentFailedEvent) {
         orderService.changeFailed(event.orderId, event.failureReason, "PAYMENT")
     }
-
 }

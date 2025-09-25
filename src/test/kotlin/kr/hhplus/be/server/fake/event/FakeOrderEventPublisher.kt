@@ -22,7 +22,7 @@ class FakeOrderEventPublisher : OrderEventPublisherInterface {
         // 테스트용 - 실제 이벤트 발행 없음
     }
 
-    override fun publishOrderProductReady(
+    override fun publishOrderProductReaserved(
         orderId: Long,
         userId: Long,
         orderItems: List<OrderItemEventData>,
@@ -43,7 +43,7 @@ class FakeOrderEventPublisher : OrderEventPublisherInterface {
     override fun publishOrderFailed(
         orderId: Long,
         failureReason: String,
-        failedStep: String
+        failedStep: String,
     ) {
         // 테스트용 - 실제 이벤트 발행 없음
     }

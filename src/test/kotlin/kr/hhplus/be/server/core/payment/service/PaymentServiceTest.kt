@@ -63,7 +63,7 @@ class PaymentServiceTest {
 
         val order = createPaymentReadyOrder(userId, orderAmount)
         val command = ProcessPaymentCommand(orderId = order.orderId)
-        
+
         whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val expectedPayment = Payment.createPayment(orderAmount, 0L)
@@ -93,7 +93,7 @@ class PaymentServiceTest {
 
         val order = createPaymentReadyOrder(userId, orderAmount)
         val command = ProcessPaymentCommand(orderId = order.orderId)
-        
+
         whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val expectedPayment = Payment.createPayment(orderAmount, 0L)
@@ -132,11 +132,11 @@ class PaymentServiceTest {
         // 주문에 쿠폰 ID 설정 (실제 운영 환경과 동일)
         val orderWithCoupon = Order(userId = userId, usedCouponId = userCouponId)
         orderWithCoupon.addOrderItem(productId = 1L, quantity = 1, unitPrice = orderAmount)
-        orderWithCoupon.prepareProducts()
+        orderWithCoupon.reservedProducts()
         orderWithCoupon.readyForPayment()
 
         val command = ProcessPaymentCommand(orderId = orderWithCoupon.orderId)
-        
+
         whenever(orderService.getOrder(orderWithCoupon.orderId)).thenReturn(orderWithCoupon)
 
         // Mock 설정
@@ -190,7 +190,7 @@ class PaymentServiceTest {
 
         val order = createPaymentReadyOrder(userId, orderAmount)
         val command = ProcessPaymentCommand(orderId = order.orderId)
-        
+
         whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val failedPayment = Payment.createPayment(orderAmount, 0L)
@@ -218,7 +218,7 @@ class PaymentServiceTest {
         order.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
         // orderStatus는 기본값인 OrderStatus.REQUESTED (결제 대기가 아닌 잘못된 상태)
         val command = ProcessPaymentCommand(orderId = order.orderId)
-        
+
         whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         // when & then
@@ -308,7 +308,7 @@ class PaymentServiceTest {
 
         val order = createPaymentReadyOrder(userId, minAmount)
         val command = ProcessPaymentCommand(orderId = order.orderId)
-        
+
         whenever(orderService.getOrder(order.orderId)).thenReturn(order)
 
         val expectedPayment = Payment.createPayment(minAmount, 0L)
@@ -334,7 +334,7 @@ class PaymentServiceTest {
         val unitPrice = if (totalAmount > 0) totalAmount else 1L
         val order = Order(userId = userId)
         order.addOrderItem(productId = 1L, quantity = 1, unitPrice = unitPrice)
-        order.prepareProducts()
+        order.reservedProducts()
         order.readyForPayment()
         return order
     }
