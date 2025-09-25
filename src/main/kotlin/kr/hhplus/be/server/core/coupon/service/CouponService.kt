@@ -181,7 +181,7 @@ class CouponService(
      * 사용자 쿠폰 조회
      */
     @Transactional(readOnly = true)
-    override fun getUserCoupon(userCouponId: Long): UserCoupon = userCouponService.getUserCoupon(userCouponId)
+    override fun getUserCoupon(usedCouponId: Long): UserCoupon = userCouponService.getUserCoupon(usedCouponId)
 
     // ===== 내부 헬퍼 메서드들 =====
 

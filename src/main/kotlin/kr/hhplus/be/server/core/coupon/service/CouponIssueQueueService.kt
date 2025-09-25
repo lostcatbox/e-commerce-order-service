@@ -2,6 +2,7 @@ package kr.hhplus.be.server.core.coupon.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.hhplus.be.server.core.coupon.domain.CouponIssueRequest
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component
  * - 내구성: Redis 영속성 설정에 따라 데이터 보존
  */
 @Component
+@ConditionalOnProperty(name = ["app.queue.type"], havingValue = "redis", matchIfMissing = true)
 class CouponIssueQueueService(
     private val redisTemplate: RedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,

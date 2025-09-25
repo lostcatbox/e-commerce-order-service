@@ -66,6 +66,10 @@ dependencies {
     // Jackson Kotlin Module (Kotlin용 JSON 도구)
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
+    // Kafka
+    implementation("org.springframework.kafka:spring-kafka")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")

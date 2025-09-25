@@ -36,6 +36,25 @@ spring:
       port: 6479
       timeout: 2000ms
       connect-timeout: 2000ms
+  # Kafka 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 1
+    consumer:
+      group-id: coupon-issue-consumer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      properties:
+        max.poll.records: 10
 
 # Redisson 설정
 spring.redis.redisson.config:
@@ -50,6 +69,48 @@ spring.redis.redisson.config:
     retryAttempts: 2
     retryInterval: 1500
 
+# 애플리케이션 설정
+app:
+  # 큐 타입 설정 (redis 또는 kafka)
+  queue:
+    type: kafka
+  # Kafka 토픽 설정
+  kafka:
+    topic:
+      coupon-issue: coupon-issue-events
+
 logging:
     level:
         com.example.demo1.DemoService: debug
+
+---
+# Consumer 전용 설정
+spring.config.activate.on-profile: consumer
+
+spring:
+  # Consumer는 웹 요청을 받지 않으므로 최소 설정
+  main:
+    web-application-type: servlet
+  kafka:
+    consumer:
+      # Consumer 인스턴스별로 다른 client-id 설정 (필요시)
+      client-id: coupon-consumer-${random.uuid}
+      # Consumer 성능 최적화
+      properties:
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
+        fetch.min.bytes: 1024
+        fetch.max.wait.ms: 500
+
+# Consumer 모드 설정
+app:
+  mode: consumer
+  queue:
+    type: kafka
+
+# Consumer 로깅 설정
+logging:
+  level:
+    kr.hhplus.be.server.infrastructure.kafka: DEBUG
+    org.apache.kafka: INFO
