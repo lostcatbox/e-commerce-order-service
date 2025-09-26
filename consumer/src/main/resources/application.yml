@@ -1,0 +1,81 @@
+# Consumer 전용 설정 - 최소한의 설정만 유지
+server:
+  port: 8081  # Actuator 헬스체크용 포트
+
+spring:
+  application:
+    name: coupon-issue-consumer
+  profiles:
+    active: consumer
+
+  # 데이터베이스 설정 (쿠폰 발급 처리를 위해 필요)
+  datasource:
+    name: ECommerceDataSource
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 5  # Consumer는 적은 커넥션 풀 사용
+      connection-timeout: 10000
+      max-lifetime: 60000
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3406/e_commerce_db?characterEncoding=UTF-8&serverTimezone=UTC
+    username: application
+    password: application
+
+  # JPA 설정 (최소한만 유지)
+  jpa:
+    open-in-view: false
+    generate-ddl: false
+    show-sql: false
+    hibernate:
+      ddl-auto: none  # Consumer는 DDL 생성하지 않음
+    properties:
+      hibernate.timezone.default_storage: NORMALIZE_UTC
+      hibernate.jdbc.time_zone: UTC
+
+  # Kafka Consumer 전용 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: coupon-issue-consumer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      client-id: coupon-consumer-${random.uuid}
+      properties:
+        max.poll.records: 10
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
+        fetch.min.bytes: 1024
+        fetch.max.wait.ms: 500
+
+# Redisson 분산락 설정 (쿠폰 발급 동시성 제어용)
+spring.redis.redisson.config:
+  singleServerConfig:
+    address: "redis://localhost:6379"  # Docker 환경에서는 redis_container:6379
+    connectionMinimumIdleSize: 3  # Consumer는 적은 Redis 연결 사용
+    connectionPoolSize: 5
+    database: 0
+    idleConnectionTimeout: 10000
+    connectTimeout: 2000
+    timeout: 2000
+    retryAttempts: 2
+    retryInterval: 1500
+
+# 애플리케이션 설정
+app:
+  mode: consumer
+  kafka:
+    topic:
+      coupon-issue: coupon-issue-events
+
+# 로깅 설정
+logging:
+  level:
+    kr.hhplus.be.server.infrastructure.kafka: DEBUG
+    kr.hhplus.be.server.core.coupon: INFO  # 쿠폰 처리 로그
+    org.apache.kafka: WARN  # Kafka 로그는 경고 이상만
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: ERROR  # SQL 로그는 에러만
+    org.springframework.web: ERROR  # 웹 관련 로그 최소화

@@ -1,0 +1,111 @@
+spring:
+  application:
+    name: hhplus
+  profiles:
+    active: local
+  datasource:
+    name: ECommerceDataSource
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 3
+      connection-timeout: 10000
+      max-lifetime: 60000
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    open-in-view: false
+    generate-ddl: false
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.timezone.default_storage: NORMALIZE_UTC
+      hibernate.jdbc.time_zone: UTC
+
+---
+spring.config.activate.on-profile: local
+
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3406/e_commerce_db?characterEncoding=UTF-8&serverTimezone=UTC
+    username: application
+    password: application
+  # Kafka 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 1
+    consumer:
+      group-id: coupon-issue-consumer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      properties:
+        max.poll.records: 10
+
+# 애플리케이션 설정
+app:
+  # 큐 타입은 Kafka만 사용
+  queue:
+    type: kafka
+  # Kafka 토픽 설정
+  kafka:
+    topic:
+      coupon-issue: coupon-issue-events
+
+logging:
+    level:
+        com.example.demo1.DemoService: debug
+
+
+# Redisson 설정 (환경변수로 설정)
+spring.redis.redisson.config:
+  singleServerConfig:
+    address: "redis://localhost:6379"
+    connectionMinimumIdleSize: 5
+    connectionPoolSize: 10
+    database: 0
+    idleConnectionTimeout: 10000
+    connectTimeout: 2000
+    timeout: 2000
+    retryAttempts: 2
+    retryInterval: 1500
+
+---
+# Consumer 전용 설정
+spring.config.activate.on-profile: consumer
+
+spring:
+  # Consumer는 웹 요청을 받지 않으므로 최소 설정
+  main:
+    web-application-type: servlet
+  kafka:
+    consumer:
+      # Consumer 인스턴스별로 다른 client-id 설정 (필요시)
+      client-id: coupon-consumer-${random.uuid}
+      # Consumer 성능 최적화
+      properties:
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
+        fetch.min.bytes: 1024
+        fetch.max.wait.ms: 500
+
+# Consumer 모드 설정
+app:
+  mode: consumer
+  queue:
+    type: kafka
+
+# Consumer 로깅 설정
+logging:
+  level:
+    kr.hhplus.be.server.infrastructure.kafka: DEBUG
+    org.apache.kafka: INFO
