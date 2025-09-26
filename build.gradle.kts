@@ -1,83 +1,44 @@
 plugins {
-    kotlin("jvm") version "2.1.0"
-    kotlin("kapt") version "2.1.0"
-    kotlin("plugin.spring") version "2.1.0"
-    kotlin("plugin.jpa") version "2.1.0"
-    id("org.springframework.boot") version "3.4.1"
-    id("io.spring.dependency-management") version "1.1.7"
+    kotlin("jvm") version "2.1.0" apply false
+    kotlin("kapt") version "2.1.0" apply false
+    kotlin("plugin.spring") version "2.1.0" apply false
+    kotlin("plugin.jpa") version "2.1.0" apply false
+    id("org.springframework.boot") version "3.4.1" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
-fun getGitHash(): String =
-    providers
-        .exec {
-            commandLine("git", "rev-parse", "--short", "HEAD")
-        }.standardOutput.asText
-        .get()
-        .trim()
+allprojects {
+    group = "kr.hhplus.be"
+    version = "0.0.1-SNAPSHOT"
 
-group = "kr.hhplus.be"
-version = getGitHash()
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+    repositories {
+        mavenCentral()
     }
 }
 
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
-        jvmToolchain(17)
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.kotlin.kapt")
+    apply(plugin = "org.jetbrains.kotlin.plugin.spring")
+    apply(plugin = "org.jetbrains.kotlin.plugin.jpa")
+    apply(plugin = "org.springframework.boot")
+    apply(plugin = "io.spring.dependency-management")
+
+    configure<JavaPluginExtension> {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
     }
-}
 
-repositories {
-    mavenCentral()
-}
-
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2024.0.0")
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+            jvmTarget = "17"
+        }
     }
-}
 
-dependencies {
-    // Kotlin
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-
-    // Spring
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-cache")
-    implementation("org.springframework.retry:spring-retry")
-    implementation("org.springframework:spring-aspects")
-
-    // DB
-    runtimeOnly("com.mysql:mysql-connector-j")
-
-    // Redisson (분산 락)
-    implementation("org.redisson:redisson-spring-boot-starter:3.24.3")
-
-    // Spring Data Redis (캐싱)
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
-
-    // Jackson Kotlin Module (Kotlin용 JSON 도구)
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-
-    // Test
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:mysql")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-    testImplementation("io.rest-assured:rest-assured:5.4.0")
-    testImplementation("io.rest-assured:kotlin-extensions:5.4.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
-    systemProperty("user.timezone", "UTC")
+    tasks.withType<Test> {
+        useJUnitPlatform()
+        systemProperty("user.timezone", "UTC")
+    }
 }
