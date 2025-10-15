@@ -1,0 +1,337 @@
+package kr.hhplus.be.server.core.payment.service
+
+import kr.hhplus.be.server.infrastructure.client.CoreApiClient
+import kr.hhplus.be.server.infrastructure.client.UserCouponResponse
+import kr.hhplus.be.server.infrastructure.client.CouponResponse
+import kr.hhplus.be.server.core.order.domain.Order
+import kr.hhplus.be.server.core.order.service.OrderServiceInterface
+import kr.hhplus.be.server.core.payment.domain.Payment
+import kr.hhplus.be.server.core.payment.repository.PaymentRepository
+import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
+import kr.hhplus.be.server.core.point.service.PointServiceInterface
+import kr.hhplus.be.server.fake.event.FakePaymentEventPublisher
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.Mock
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.*
+
+@ExtendWith(MockitoExtension::class)
+@DisplayName("PaymentService 비즈니스 로직 테스트")
+class PaymentServiceTest {
+    @Mock
+    private lateinit var paymentRepository: PaymentRepository
+
+    @Mock
+    private lateinit var pointService: PointServiceInterface
+
+    @Mock
+    private lateinit var coreApiClient: CoreApiClient
+
+    @Mock
+    private lateinit var orderService: OrderServiceInterface
+
+    private val fakePaymentEventPublisher = FakePaymentEventPublisher()
+
+    private lateinit var paymentService: PaymentService
+
+    @BeforeEach
+    fun setup() {
+        paymentService =
+            PaymentService(
+                paymentRepository,
+                pointService,
+                coreApiClient,
+                orderService,
+                fakePaymentEventPublisher,
+            )
+        clearInvocations(paymentRepository, pointService, coreApiClient)
+    }
+
+    @Test
+    @DisplayName("쿠폰 없이 결제 처리 성공")
+    fun `쿠폰 없이 결제 처리 성공`() {
+        // given
+        val userId = 1L
+        val orderAmount = 50000L
+
+        val order = createPaymentReadyOrder(userId, orderAmount)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
+
+        val expectedPayment = Payment.createPayment(orderAmount, 0L)
+        expectedPayment.success() // 성공 상태로 변경
+
+        whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
+
+        // when
+        val result = paymentService.processPayment(command)
+
+        // then
+        assertEquals(orderAmount, result.originalAmount)
+        assertEquals(0L, result.discountAmount)
+        assertEquals(orderAmount, result.finalAmount)
+        assertTrue(result.isSuccess())
+
+        verify(pointService).usePoint(userId, orderAmount)
+        verify(paymentRepository).save(any<Payment>())
+    }
+
+    @Test
+    @DisplayName("쿠폰 없이 결제 처리 성공 - 추가 검증")
+    fun `쿠폰 없이 결제 처리 성공 - 추가 검증`() {
+        // given
+        val userId = 1L
+        val orderAmount = 30000L
+
+        val order = createPaymentReadyOrder(userId, orderAmount)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
+
+        val expectedPayment = Payment.createPayment(orderAmount, 0L)
+        expectedPayment.success()
+
+        whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
+
+        // when
+        val result = paymentService.processPayment(command)
+
+        // then
+        assertEquals(orderAmount, result.originalAmount)
+        assertEquals(0L, result.discountAmount)
+        assertEquals(orderAmount, result.finalAmount)
+        assertTrue(result.isSuccess())
+
+        // 쿠폰이 없으므로 쿠폰 클라이언트는 호출되지 않음
+        verify(coreApiClient, never()).useCoupon(any())
+        verify(coreApiClient, never()).getCouponInfo(any())
+        verify(pointService).usePoint(userId, orderAmount)
+        verify(paymentRepository).save(any<Payment>())
+    }
+
+    @Test
+    @DisplayName("주문에 쿠폰 ID가 설정된 경우 쿠폰 서비스를 통한 결제 처리")
+    fun `주문에 쿠폰 ID가 설정된 경우 쿠폰 서비스를 통한 결제 처리`() {
+        // given
+        val userId = 1L
+        val orderAmount = 50000L
+        val discountAmount = 10000L
+        val finalAmount = orderAmount - discountAmount
+        val userCouponId = 200L
+        val couponId = 500L
+
+        val order = createPaymentReadyOrder(userId, orderAmount)
+        // 주문에 쿠폰 ID 설정 (실제 운영 환경과 동일)
+        val orderWithCoupon = Order(userId = userId, usedCouponId = userCouponId)
+        orderWithCoupon.addOrderItem(productId = 1L, quantity = 1, unitPrice = orderAmount)
+        orderWithCoupon.reservedProducts()
+        orderWithCoupon.readyForPayment()
+
+        val command = ProcessPaymentCommand(orderId = orderWithCoupon.orderId)
+
+        whenever(orderService.getOrder(orderWithCoupon.orderId)).thenReturn(orderWithCoupon)
+
+        // Mock 설정 - 쿠폰 클라이언트 호출 여부만 확인
+        val mockUserCouponResponse = UserCouponResponse(
+            userCouponId = userCouponId,
+            userId = userId,
+            couponId = couponId,
+            status = "USED"
+        )
+        val mockCouponResponse = CouponResponse(
+            couponId = couponId,
+            description = "10000원 할인 쿠폰",
+            discountAmount = discountAmount,
+            stock = 100,
+            status = "OPENED"
+        )
+        whenever(coreApiClient.getUserCoupon(userCouponId)).thenReturn(mockUserCouponResponse)
+        whenever(coreApiClient.useCoupon(userCouponId)).thenReturn(mockUserCouponResponse)
+        whenever(coreApiClient.getCouponInfo(couponId)).thenReturn(mockCouponResponse)
+
+        val expectedPayment = Payment.createPayment(orderAmount, discountAmount)
+        expectedPayment.success()
+        whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
+
+        // when
+        val result = paymentService.processPayment(command)
+
+        // then
+        assertEquals(orderAmount, result.originalAmount)
+        assertEquals(discountAmount, result.discountAmount)
+        assertEquals(finalAmount, result.finalAmount)
+        assertTrue(result.isSuccess())
+
+        // 쿠폰 클라이언트가 호출되었는지 확인
+        verify(coreApiClient).useCoupon(userCouponId)
+        verify(coreApiClient).getCouponInfo(couponId)
+        verify(pointService).usePoint(userId, finalAmount)
+        verify(paymentRepository).save(any<Payment>())
+    }
+
+    @Test
+    @DisplayName("포인트 사용 실패 시 결제 실패 처리")
+    fun `포인트 사용 실패 시 결제 실패 처리`() {
+        // given
+        val userId = 1L
+        val orderId = 100L
+
+        val orderAmount = 50000L
+
+        val order = createPaymentReadyOrder(userId, orderAmount)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
+
+        val failedPayment = Payment.createPayment(orderAmount, 0L)
+        failedPayment.fail() // 실패 상태로 변경
+
+        whenever(pointService.usePoint(userId, orderAmount)).thenThrow(RuntimeException("포인트 부족"))
+        whenever(paymentRepository.save(any<Payment>())).thenReturn(failedPayment)
+
+        // when & then
+        val exception =
+            assertThrows<RuntimeException> {
+                paymentService.processPayment(command)
+            }
+        assertEquals("포인트 부족", exception.message)
+
+        verify(pointService).usePoint(userId, orderAmount)
+        verify(paymentRepository, atLeastOnce()).save(any<Payment>()) // 실패 처리로 인해 최소 1번 호출
+    }
+
+    @Test
+    @DisplayName("결제 대기 상태가 아닌 주문으로 결제 시 예외 발생")
+    fun `결제 대기 상태가 아닌 주문으로 결제 시 예외 발생`() {
+        // given
+        val order = Order(userId = 1L)
+        order.addOrderItem(productId = 1L, quantity = 1, unitPrice = 10000L)
+        // orderStatus는 기본값인 OrderStatus.REQUESTED (결제 대기가 아닌 잘못된 상태)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
+
+        // when & then
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                paymentService.processPayment(command)
+            }
+        assertTrue(exception.message!!.contains("결제 가능한 상태의 주문이 아닙니다"))
+
+        verify(paymentRepository, never()).save(any())
+        verify(pointService, never()).usePoint(any(), any())
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 결제 조회 시 예외 발생")
+    fun `존재하지 않는 결제 조회 시 예외 발생`() {
+        // given
+        val paymentId = 999L
+        whenever(paymentRepository.findByPaymentId(paymentId)).thenReturn(null)
+
+        // when & then
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                paymentService.getPayment(paymentId)
+            }
+        assertTrue(exception.message!!.contains("존재하지 않는 결제입니다"))
+        assertTrue(exception.message!!.contains("999"))
+
+        verify(paymentRepository).findByPaymentId(paymentId)
+    }
+
+    @Test
+    @DisplayName("주문별 결제 조회 - 결제가 없는 경우")
+    fun `주문별 결제 조회 - 결제가 없는 경우`() {
+        // given
+        val orderId = 100L
+        whenever(paymentRepository.findByOrderId(orderId)).thenReturn(null)
+
+        // when
+        val result = paymentService.getPaymentByOrderId(orderId)
+
+        // then
+        assertNull(result)
+        verify(paymentRepository).findByOrderId(orderId)
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 결제 ID로 조회 시 예외 발생")
+    fun `유효하지 않은 결제 ID로 조회 시 예외 발생`() {
+        // given
+        val invalidPaymentId = 0L
+
+        // when & then
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                paymentService.getPayment(invalidPaymentId)
+            }
+        assertTrue(exception.message!!.contains("결제 ID는 0보다 커야 합니다"))
+
+        verify(paymentRepository, never()).findByPaymentId(any())
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 주문 ID로 결제 조회 시 예외 발생")
+    fun `유효하지 않은 주문 ID로 결제 조회 시 예외 발생`() {
+        // given
+        val invalidOrderId = -1L
+
+        // when & then
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                paymentService.getPaymentByOrderId(invalidOrderId)
+            }
+        assertTrue(exception.message!!.contains("주문 ID는 0보다 커야 합니다"))
+
+        verify(paymentRepository, never()).findByOrderId(any())
+    }
+
+    @Test
+    @DisplayName("최소 금액 결제 처리 성공")
+    fun `최소 금액 결제 처리 성공`() {
+        // given
+        val userId = 1L
+        val orderId = 100L
+
+        val minAmount = 1L
+
+        val order = createPaymentReadyOrder(userId, minAmount)
+        val command = ProcessPaymentCommand(orderId = order.orderId)
+
+        whenever(orderService.getOrder(order.orderId)).thenReturn(order)
+
+        val expectedPayment = Payment.createPayment(minAmount, 0L)
+        expectedPayment.success() // 성공 상태로 변경
+
+        whenever(paymentRepository.save(any<Payment>())).thenReturn(expectedPayment)
+
+        // when
+        val result = paymentService.processPayment(command)
+
+        // then
+        assertEquals(minAmount, result.finalAmount)
+        verify(pointService).usePoint(userId, minAmount)
+    }
+
+    /**
+     * 테스트용 결제 대기 상태 주문 생성
+     */
+    private fun createPaymentReadyOrder(
+        userId: Long,
+        totalAmount: Long,
+    ): Order {
+        val unitPrice = if (totalAmount > 0) totalAmount else 1L
+        val order = Order(userId = userId)
+        order.addOrderItem(productId = 1L, quantity = 1, unitPrice = unitPrice)
+        order.reservedProducts()
+        order.readyForPayment()
+        return order
+    }
+}
