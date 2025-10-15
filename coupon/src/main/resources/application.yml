@@ -1,0 +1,85 @@
+# Consumer 전용 설정 - 최소한의 설정만 유지
+server:
+  port: 8081  # Actuator 헬스체크용 포트
+
+spring:
+  application:
+    name: coupon
+  profiles:
+    active: consumer
+
+  # 데이터베이스 설정 (쿠폰 발급 처리를 위해 필요)
+  datasource:
+    name: ECommerceDataSource
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 3  # Consumer는 최소 연결만 사용
+      minimum-idle: 1
+      connection-timeout: 15000  # timeout 증가
+      max-lifetime: 60000
+      idle-timeout: 30000
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3406/e_commerce_db?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true&connectionTimeout=30000&socketTimeout=30000
+    username: application
+    password: application
+
+  # JPA 설정 (최소한만 유지)
+  jpa:
+    open-in-view: false
+    generate-ddl: false
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.timezone.default_storage: NORMALIZE_UTC
+      hibernate.jdbc.time_zone: UTC
+      hibernate.jdbc.batch_size: 20
+      hibernate.order_inserts: true
+      hibernate.order_updates: true
+      hibernate.jdbc.batch_versioned_data: true
+      hibernate.connection.provider_disables_autocommit: true
+      hibernate.transaction.jta.platform: none  # JTA 사용하지 않음을 명시
+
+  # Kafka Consumer 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: coupon-issue-consumer-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      client-id: coupon-consumer-${random.uuid}
+
+# Redisson 분산락 설정 (쿠폰 발급 동시성 제어용)
+spring.redis.redisson.config:
+  singleServerConfig:
+    address: "redis://localhost:6379"
+    connectionMinimumIdleSize: 1  # Consumer는 최소 연결만 사용
+    connectionPoolSize: 3
+    database: 0
+    idleConnectionTimeout: 15000  # timeout 증가
+    connectTimeout: 3000
+    timeout: 3000
+    retryAttempts: 3
+    retryInterval: 2000
+
+# 애플리케이션 설정
+app:
+  kafka:
+    topic:
+      coupon-issue: coupon-issue-events
+
+# Core 서비스 URL 설정
+core:
+  service:
+    url: http://localhost:8081
+
+# 로깅 설정
+logging:
+  level:
+    kr.hhplus.be.server.infrastructure.kafka: DEBUG
+    kr.hhplus.be.server.core.coupon: INFO  # 쿠폰 처리 로그
+    org.apache.kafka: WARN  # Kafka 로그는 경고 이상만
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: ERROR  # SQL 로그는 에러만
+    org.springframework.web: ERROR  # 웹 관련 로그 최소화
