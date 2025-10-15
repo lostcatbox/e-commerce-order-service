@@ -3,7 +3,7 @@
 
 ### 아키텍처 특징
 1. **레이어 분리**: Controller, Service, Domain, Infrastructure 레이어로 명확한 책임 분리
-2. **의존성 역전**: `controller -> service -> (domain) -> infra` 순으로 상위에서 하위 계층으로 의존성이 필요한 구조에서 최대한 의존성 역전 원칙을 적용하여 상위 레이어가 하위 레이어에 직접 의존하지 않도록 설계
+2. **의존성 역전**: `controller -> service -> (domain) -> infrastructure` 순으로 상위에서 하위 계층으로 의존성이 필요한 구조에서 최대한 의존성 역전 원칙을 적용하여 상위 레이어가 하위 레이어에 직접 의존하지 않도록 설계
 3. **테스트 용이성**: 각 레이어별 독립적인 테스트 가능
 4. **변경 격리**: 외부 시스템 변경이 비즈니스 로직에 미치는 영향 최소화
 
@@ -24,7 +24,7 @@ src/main/kotlin/tdd/
 │   └── repository/      # 📋 데이터 접근 인터페이스
 │       ├── UserPointRepository.kt
 │       └── PointHistoryRepository.kt
-└── infra/              # 🔌 외부 시스템 연동 (Infrastructure Layer)
+└── infrastructure/              # 🔌 외부 시스템 연동 (Infrastructure Layer)
     └── point/
         ├── database/    # 데이터베이스 테이블
         └── persistence/ # Repository 구현체
