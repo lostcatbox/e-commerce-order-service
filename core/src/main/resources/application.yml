@@ -7,6 +7,7 @@ spring:
     name: ECommerceDataSource
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
+      auto-commit: false
       maximum-pool-size: 2  # Core 모듈은 최소 연결만 사용
       minimum-idle: 1
       connection-timeout: 15000  # timeout 증가
@@ -71,7 +72,7 @@ app:
 # Coupon 서비스 URL 설정
 coupon:
   service:
-    url: http://localhost:8082
+    url: http://localhost:8081
 
 logging:
     level:
@@ -90,6 +91,7 @@ spring.redis.redisson.config:
     timeout: 3000
     retryAttempts: 3
     retryInterval: 2000
+
 
 ---
 # Consumer 전용 설정

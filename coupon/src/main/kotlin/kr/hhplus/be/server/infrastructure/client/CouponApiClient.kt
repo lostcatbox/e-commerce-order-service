@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable
  */
 @FeignClient(
     name = "core-service",
-    url = "\${core.service.url:http://localhost:8081}",
+    url = "\${core.service.url:http://localhost:8080}",
 )
 interface CouponApiClient {
     /**

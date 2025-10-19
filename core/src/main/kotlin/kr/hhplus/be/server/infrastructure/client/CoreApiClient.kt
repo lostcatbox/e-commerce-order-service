@@ -4,40 +4,44 @@ import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 
 /**
  * Core 서버에서 Coupon 서버로의 API 호출을 위한 Feign Client
  */
 @FeignClient(
     name = "coupon-service",
-    url = "\${coupon.service.url:http://localhost:8082}"
+    url = "\${coupon.service.url:http://localhost:8081}",
 )
 interface CoreApiClient {
-    
     /**
      * 사용자 쿠폰 조회
      * @param userCouponId 사용자 쿠폰 ID
      * @return 사용자 쿠폰 정보
      */
     @GetMapping("/api/v1/coupons/user-coupons/{userCouponId}")
-    fun getUserCoupon(@PathVariable userCouponId: Long): UserCouponResponse
-    
+    fun getUserCoupon(
+        @PathVariable userCouponId: Long,
+    ): UserCouponResponse
+
     /**
      * 쿠폰 정보 조회
      * @param couponId 쿠폰 ID
      * @return 쿠폰 정보
      */
     @GetMapping("/api/v1/coupons/{couponId}")
-    fun getCouponInfo(@PathVariable couponId: Long): CouponResponse
-    
+    fun getCouponInfo(
+        @PathVariable couponId: Long,
+    ): CouponResponse
+
     /**
      * 쿠폰 사용
      * @param userCouponId 사용자 쿠폰 ID
      * @return 사용된 사용자 쿠폰 정보
      */
     @PostMapping("/api/v1/coupons/user-coupons/{userCouponId}/use")
-    fun useCoupon(@PathVariable userCouponId: Long): UserCouponResponse
+    fun useCoupon(
+        @PathVariable userCouponId: Long,
+    ): UserCouponResponse
 }
 
 /**
@@ -47,7 +51,7 @@ data class UserCouponResponse(
     val userCouponId: Long,
     val userId: Long,
     val couponId: Long,
-    val status: String
+    val status: String,
 )
 
 /**
@@ -58,5 +62,5 @@ data class CouponResponse(
     val description: String,
     val discountAmount: Long,
     val stock: Int,
-    val status: String
+    val status: String,
 )

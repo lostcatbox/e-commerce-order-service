@@ -13,6 +13,7 @@ spring:
     name: ECommerceDataSource
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
+      auto-commit: false
       maximum-pool-size: 3  # Consumer는 최소 연결만 사용
       minimum-idle: 1
       connection-timeout: 15000  # timeout 증가
@@ -72,7 +73,7 @@ app:
 # Core 서비스 URL 설정
 core:
   service:
-    url: http://localhost:8081
+    url: http://localhost:8080
 
 # 로깅 설정
 logging:

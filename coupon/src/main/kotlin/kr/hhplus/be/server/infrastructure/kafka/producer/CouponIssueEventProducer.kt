@@ -74,38 +74,4 @@ class CouponIssueEventProducer(
             false
         }
     }
-
-    /**
-     * 쿠폰 발급 이벤트 동기 발행 (테스트용)
-     * @param event 발행할 이벤트
-     * @return 발행 성공 여부
-     */
-    fun publishCouponIssueEventSync(event: CouponIssueEvent): Boolean {
-        return try {
-            if (!event.isValid()) {
-                println("유효하지 않은 쿠폰 발급 이벤트: $event")
-                return false
-            }
-
-            val messagePayload = objectMapper.writeValueAsString(event)
-            val partitionKey = event.getPartitionKey()
-
-            println("쿠폰 발급 이벤트 동기 발행 시작 - EventId: ${event.eventId}")
-
-            // 동기 발행
-            val result = kafkaTemplate.send(topicName, partitionKey, messagePayload).get()
-            val metadata = result.recordMetadata
-
-            println(
-                "쿠폰 발급 이벤트 동기 발행 성공 - EventId: ${event.eventId}, " +
-                    "Topic: ${metadata.topic()}, Partition: ${metadata.partition()}, Offset: ${metadata.offset()}",
-            )
-
-            true
-        } catch (e: Exception) {
-            println("쿠폰 발급 이벤트 동기 발행 실패 - EventId: ${event.eventId}, Error: ${e.message}")
-            e.printStackTrace()
-            false
-        }
-    }
 }
