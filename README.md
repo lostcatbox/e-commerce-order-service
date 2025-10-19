@@ -32,6 +32,9 @@
 - 📋️ **MSA 이벤트 기반 아키텍처 보고서**
   - [Kafka, MSA 기반으로 선착순 쿠폰 발급 시스템 개선 (멀티모듈 도입)](docs/study/improve-coupon-issue-with-kafka.md)
 
+## 테스트 가이드
+- 📋 [쿠폰 발급 시스템 통합 테스트 가이드 (Consumer 스케일 아웃 포함)](COUPON_TEST_README.md)
+
 ## 참고 자료
 - 📚 [트랜잭션 격리 수준(Isolation Level) 보고서](docs/study/transaction-acid-and-isolation-level.md)
 - 📚 [Cache (캐시)의 종류와 특징](docs/study/caching.md)
