@@ -1,6 +1,5 @@
 # 대용량 트래픽 이커머스 시스템 🛒
-
-----------------------------------------
+- 이커머스에서 주문 도메인을 중심으로 DDD, EDA, TDD 기반의 구조 설계 및 개발을 실습한 프로젝트입니다.
 
 ## 프로젝트 개발 이슈 관리
 - ✅ [프로젝트 타임라인](https://github.com/users/lostcatbox/projects/3)
@@ -43,3 +42,28 @@
 - 📚 [Cache (캐시)의 종류와 특징](docs/study/caching.md)
 - 📚 [Kafka 기본 개념 보고서](docs/study/kafka-basic-concepts.md)
 - 📚 [왜 ApplicationEvent를 사용하는가?](docs/study/application-event.md)
+
+
+------------------------------------------------------------
+# 프로젝트 요약
+## 스택
+- Language: Kotlin / Java
+- Framework: Spring Boot, JPA
+- Infra: MySQL, Redis, Kafka
+- Test: JUnit5, Mockk
+
+## **아키택처**
+- 클린 아키텍처 + 헥사고날 구조 적용
+- 도메인 주도 설계 (Aggregate, Value Object 구분)
+- 이벤트 주도 아키텍처 (OrderCreated 등 이벤트 발행)
+
+## **가장 노력한 부분**
+- 도메인 중심의 서비스 레이어 설계
+- 테스트 주도 개발(TDD)
+- 유지보수성과 확장성 높은 구조 설계
+
+## 최종 결과
+- 주문 처리 로직 분리 및 이벤트 기반 확장 가능 구조 확보
+- 테스트 코드 80% 커버리지 달성 (단위 테스트 및 통합테스트)
+- 프로젝트 전반의 DDD 적용 경험
+
