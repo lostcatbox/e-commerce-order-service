@@ -34,6 +34,9 @@
 
 ## 테스트 가이드
 - 📋 [쿠폰 발급 시스템 통합 테스트 가이드 (Consumer 스케일 아웃 포함)](COUPON_TEST_README.md)
+- 📋 [주문, 결제, 포인트, 제품 도메인들의 단위테스트 및 통합 테스트 위치](core/src/test/kotlin/kr/hhplus/be/server/core)
+- 📋 [쿠폰 도메인의 단위테스트 및 통합 테스트 위치](coupon/src/test/kotlin/kr/hhplus/be/server/core)
+
 
 ## 참고 자료
 - 📚 [트랜잭션 격리 수준(Isolation Level) 보고서](docs/study/transaction-acid-and-isolation-level.md)
