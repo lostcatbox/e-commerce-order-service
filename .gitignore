@@ -36,4 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 
-data
+### docker-data ###
+/data/*
+
+### logs ###
+/logs/*

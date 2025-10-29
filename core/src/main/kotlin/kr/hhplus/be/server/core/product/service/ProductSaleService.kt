@@ -5,13 +5,11 @@ import kr.hhplus.be.server.core.product.domain.ProductSale
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import kr.hhplus.be.server.core.product.repository.ProductSaleRepository
 import kr.hhplus.be.server.core.product.service.dto.PopularProductDto
+import kr.hhplus.be.server.support.utils.CommonFormatter
 import org.slf4j.LoggerFactory
-import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Service
 class ProductSaleService(
@@ -24,84 +22,105 @@ class ProductSaleService(
 
     /**
      * 최근 3일간 가장 많이 팔린 상위 5개 상품 조회
-     * 캐시에만 의존하며, 캐시 미스 시 빈 결과 반환
      *
-     * @Cacheable: 캐시된 데이터가 있으면 반환, 없으면 빈 결과 반환
-     * - 캐시 키: "popular_products:top5" (고정 키 사용)
+     * @Cacheable: 캐시된 데이터가 있으면 반환, 없으면 메서드 실행 후 캐시에 저장 (Read-through 캐싱)(TTL: 1분)
+     * - 캐시 키: "popular_products::top5" (고정 키 사용)
      */
     @Cacheable(
         value = ["popular_products"],
         key = "'top5'",
     )
-    override fun getPopularProducts(rankDate: LocalDate): List<PopularProductDto> {
-        // 캐시 미스 시 빈 결과 반환
-        log.warn("인기 상품 캐시 미스 발생 - 빈 결과 반환. 배치 프로세스에서 캐시가 곧 갱신됩니다.")
-        return emptyList()
+    override fun getPopularProductsInTop5(targetDate: LocalDate): List<PopularProductDto> {
+        // 최근 3일간 데이터 조회
+        val twoDaysAgo = targetDate.minusDays(2)
+        val popularProductsInfo = productSaleRepository.findPopularProducts(twoDaysAgo, targetDate, 5)
+
+        // 상품 정보 조회 및 DTO 변환
+        return popularProductsInfo.mapNotNull { salesInfo ->
+            productRepository.findByProductId(salesInfo.productId)?.let { product ->
+                PopularProductDto(
+                    productId = salesInfo.productId,
+                    productName = product.name,
+                    productDescription = product.description,
+                    productPrice = product.price,
+                    totalSales = salesInfo.totalSales,
+                )
+            }
+        }
     }
 
     /**
-     * 상품 판매량 기록
+     * Write-Back 캐싱: Redis에 상품 판매량을 저장하고 즉시 응답
+     * 실제 DB 저장은 스케줄러에서 배치로 처리
      */
     @Transactional
     override fun recordProductSale(
         productId: Long,
         quantity: Int,
+        saleDate: LocalDate,
     ) {
         validateProductId(productId)
         validateQuantity(quantity)
 
-        val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val saleDate = today.format(formatter).toLong()
-
         val productSale =
             ProductSale.createNewSale(
                 productId = productId,
-                saleDate = saleDate,
+                saleDate = CommonFormatter.toLongYYYYMMDD(saleDate),
                 quantity = quantity,
             )
 
+        // Redis에 즉시 저장 (빠른 응답)
         productSaleRepository.save(productSale)
 
-        log.debug("상품 판매량 기록 완료: productId={}, quantity={}", productId, quantity)
+        log.debug("Redis에 상품 판매량 기록 완료: productId={}, quantity={}", productId, quantity)
     }
 
     /**
-     * 인기 상품 캐시 갱신 배치 작업
-     * (1분마다 실행되어 Redis Sorted Set에서 최신 데이터를 조회하여 캐시 갱신)
+     * Redis → DB 동기화 (스케줄러에서 호출)
+     * Redis에 저장된 모든 판매량 데이터를 DB에 배치로 저장
      */
-    @CachePut(value = ["popular_products"], key = "'top5'")
-    @Scheduled(fixedRate = 3000) // 1분마다 실행
-    fun updatePopularProductsCache(): List<PopularProductDto> =
+    @Transactional
+    fun syncRedisCacheToDatabase(): Boolean =
         try {
-            val today = LocalDate.now()
-            val threeDaysAgo = today.minusDays(3)
+            log.info("Redis → DB 동기화 시작")
 
-            log.info("인기 상품 캐시 갱신 시작")
+            // 1. 어제까지의 날짜 범위 계산 (오늘 제외)
+            val yesterday = LocalDate.now().minusDays(1)
 
-            // 최근 3일간 데이터 조회
-            val popularProductsInfo = productSaleRepository.findPopularProductsInfo(threeDaysAgo, today)
+            val targetDateAtLong = CommonFormatter.toLongYYYYMMDD(yesterday)
+            log.info(
+                "판매량 데이터 동기화 대상 날짜 (Redis -> MySql): {}",
+                targetDateAtLong,
+            )
 
-            // 상품 정보와 함께 DTO 생성
-            val result =
-                popularProductsInfo.mapNotNull { salesInfo ->
-                    productRepository.findByProductId(salesInfo.productId)?.let { product ->
-                        PopularProductDto(
-                            productId = salesInfo.productId,
-                            productName = product.name,
-                            productDescription = product.description,
-                            productPrice = product.price,
-                            totalSales = salesInfo.totalSales,
-                        )
-                    }
+            val saleDataInCache = productSaleRepository.findSalesDataByDate(targetDateAtLong).toMutableList()
+            val willSaveProductSales = mutableListOf<ProductSale>()
+            val alreadySavedProductSalesInDB = productSaleRepository.findSaleDataFromBack(targetDateAtLong)
+
+            // Redis와 DB에 모두 존재하는 경우, Redis의 판매량을 DB에 반영
+            alreadySavedProductSalesInDB.forEach { existingSaleData ->
+                saleDataInCache.find { it.productId == existingSaleData.productId }?.let { redisSaleData ->
+                    existingSaleData.changeTotalQuantity(redisSaleData.getTotalQuantity())
+                    saleDataInCache.remove(redisSaleData)
+                    willSaveProductSales.add(existingSaleData)
                 }
+            }
 
-            log.info("인기 상품 캐시 갱신 완료: {} 개 상품", result.size)
-            result
+            // Redis에만 존재하는 데이터는 DB에 새로 추가
+            willSaveProductSales.addAll(saleDataInCache)
+
+            productSaleRepository.saveAllToBack(willSaveProductSales)
+
+            if (willSaveProductSales.size > 0) {
+                log.info("Redis → DB 동기화 완료: {} 날짜, {} 건 처리", targetDateAtLong, willSaveProductSales.size)
+            } else {
+                log.info("동기화할 Redis 데이터가 없습니다")
+            }
+
+            true
         } catch (exception: Exception) {
-            log.error("인기 상품 캐시 갱신 실패", exception)
-            // 실패 시 빈 리스트 반환하여 캐시 무효화 방지
-            emptyList()
+            log.error("Redis → DB 동기화 실패", exception)
+            false
         }
 
     /**

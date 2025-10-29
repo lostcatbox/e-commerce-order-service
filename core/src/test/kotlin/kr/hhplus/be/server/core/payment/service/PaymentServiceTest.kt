@@ -1,8 +1,5 @@
 package kr.hhplus.be.server.core.payment.service
 
-import kr.hhplus.be.server.infrastructure.client.CoreApiClient
-import kr.hhplus.be.server.infrastructure.client.UserCouponResponse
-import kr.hhplus.be.server.infrastructure.client.CouponResponse
 import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.service.OrderServiceInterface
 import kr.hhplus.be.server.core.payment.domain.Payment
@@ -10,6 +7,9 @@ import kr.hhplus.be.server.core.payment.repository.PaymentRepository
 import kr.hhplus.be.server.core.payment.service.dto.ProcessPaymentCommand
 import kr.hhplus.be.server.core.point.service.PointServiceInterface
 import kr.hhplus.be.server.fake.event.FakePaymentEventPublisher
+import kr.hhplus.be.server.infrastructure.client.CoreApiClient
+import kr.hhplus.be.server.infrastructure.client.CouponResponse
+import kr.hhplus.be.server.infrastructure.client.UserCouponResponse
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -126,7 +126,7 @@ class PaymentServiceTest {
         val userCouponId = 200L
         val couponId = 500L
 
-        val order = createPaymentReadyOrder(userId, orderAmount)
+        createPaymentReadyOrder(userId, orderAmount)
         // 주문에 쿠폰 ID 설정 (실제 운영 환경과 동일)
         val orderWithCoupon = Order(userId = userId, usedCouponId = userCouponId)
         orderWithCoupon.addOrderItem(productId = 1L, quantity = 1, unitPrice = orderAmount)
@@ -138,19 +138,21 @@ class PaymentServiceTest {
         whenever(orderService.getOrder(orderWithCoupon.orderId)).thenReturn(orderWithCoupon)
 
         // Mock 설정 - 쿠폰 클라이언트 호출 여부만 확인
-        val mockUserCouponResponse = UserCouponResponse(
-            userCouponId = userCouponId,
-            userId = userId,
-            couponId = couponId,
-            status = "USED"
-        )
-        val mockCouponResponse = CouponResponse(
-            couponId = couponId,
-            description = "10000원 할인 쿠폰",
-            discountAmount = discountAmount,
-            stock = 100,
-            status = "OPENED"
-        )
+        val mockUserCouponResponse =
+            UserCouponResponse(
+                userCouponId = userCouponId,
+                userId = userId,
+                couponId = couponId,
+                status = "USED",
+            )
+        val mockCouponResponse =
+            CouponResponse(
+                couponId = couponId,
+                description = "10000원 할인 쿠폰",
+                discountAmount = discountAmount,
+                stock = 100,
+                status = "OPENED",
+            )
         whenever(coreApiClient.getUserCoupon(userCouponId)).thenReturn(mockUserCouponResponse)
         whenever(coreApiClient.useCoupon(userCouponId)).thenReturn(mockUserCouponResponse)
         whenever(coreApiClient.getCouponInfo(couponId)).thenReturn(mockCouponResponse)
@@ -180,7 +182,6 @@ class PaymentServiceTest {
     fun `포인트 사용 실패 시 결제 실패 처리`() {
         // given
         val userId = 1L
-        val orderId = 100L
 
         val orderAmount = 50000L
 
@@ -298,7 +299,6 @@ class PaymentServiceTest {
     fun `최소 금액 결제 처리 성공`() {
         // given
         val userId = 1L
-        val orderId = 100L
 
         val minAmount = 1L
 

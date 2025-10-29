@@ -1,14 +1,10 @@
 package kr.hhplus.be.server.infrastructure.persistence.product.redis
 
 import kr.hhplus.be.server.core.product.domain.ProductSale
-import kr.hhplus.be.server.core.product.service.dto.ProductPeriodSaleDto
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Repository
 import java.time.Duration
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.UUID
 
 /**
  * Redis 기반 상품 판매량 Repository 구현체
@@ -20,20 +16,8 @@ class RedisProductSaleRepository(
 ) {
     companion object {
         private const val RANK_KEY_PREFIX = "rank:date:"
-        private const val UNION_KEY_PREFIX = "rank:union:"
         private val log = LoggerFactory.getLogger(RedisProductSaleRepository::class.java)
     }
-
-    fun findPopularProductsInfo(
-        startDate: LocalDate,
-        endDate: LocalDate,
-    ): List<ProductPeriodSaleDto> =
-        try {
-            getPopularProductsFromRedis(startDate, endDate)
-        } catch (exception: Exception) {
-            log.error("Redis에서 인기 상품 조회 실패", exception)
-            emptyList()
-        }
 
     fun save(productSale: ProductSale): ProductSale {
         try {
@@ -43,7 +27,7 @@ class RedisProductSaleRepository(
             redisTemplate.opsForZSet().incrementScore(
                 dateKey,
                 productSale.productId.toString(),
-                productSale.totalQuantity.toDouble(),
+                productSale.getTotalQuantity().toDouble(),
             )
 
             // TTL 설정 (5일)
@@ -52,7 +36,7 @@ class RedisProductSaleRepository(
             log.debug(
                 "Redis에 판매량 기록 완료: productId={}, quantity={}, date={}",
                 productSale.productId,
-                productSale.totalQuantity,
+                productSale.getTotalQuantity(),
                 productSale.saleDate,
             )
 
@@ -63,76 +47,33 @@ class RedisProductSaleRepository(
         }
     }
 
-    fun findByProductIdAndSaleDate(
-        productId: Long,
-        saleDate: Long,
-    ): ProductSale? =
+    /**
+     * 특정 날짜의 Redis 판매량 데이터 조회
+     * @param saleDate 판매 날짜 (YYYYMMDD 형태)
+     * @return 해당 날짜의 판매량 데이터 목록
+     */
+    fun findSalesDataByDate(saleDate: Long): List<ProductSale> {
         try {
             val dateKey = "$RANK_KEY_PREFIX$saleDate"
-            val score = redisTemplate.opsForZSet().score(dateKey, productId.toString())
+            val salesData = redisTemplate.opsForZSet().rangeWithScores(dateKey, 0, -1)
 
-            score?.let {
-                ProductSale.Companion.createNewSale(
-                    productId = productId,
-                    saleDate = saleDate,
-                    quantity = it.toInt(),
-                )
-            }
-        } catch (exception: Exception) {
-            log.error("Redis에서 판매 데이터 조회 실패", exception)
-            null
-        }
-
-    /**
-     * Redis Sorted Set에서 인기 상품 조회
-     */
-    private fun getPopularProductsFromRedis(
-        startDate: LocalDate,
-        endDate: LocalDate,
-    ): List<ProductPeriodSaleDto> {
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val keys =
-            generateSequence(startDate) { it.plusDays(1) }
-                .takeWhile { !it.isAfter(endDate) }
-                .map { "$RANK_KEY_PREFIX${it.format(formatter)}" }
-                .toList()
-
-        if (keys.isEmpty()) {
-            log.warn("조회할 날짜 키가 없습니다. startDate={}, endDate={}", startDate, endDate)
-            return emptyList()
-        }
-
-        // ZUNIONSTORE로 임시 키 생성
-        val tempKey = "$UNION_KEY_PREFIX${UUID.randomUUID()}"
-
-        try {
-            if (keys.size == 1) {
-                // 키가 하나만 있으면 바로 조회
-                return getTopProductsFromKey(keys[0])
-            } else {
-                // 여러 키를 합산하여 임시 키에 저장
-                redisTemplate.opsForZSet().unionAndStore(keys[0], keys.drop(1), tempKey)
-                return getTopProductsFromKey(tempKey)
-            }
-        } finally {
-            // 임시 키 삭제
-            redisTemplate.delete(tempKey)
-        }
-    }
-
-    /**
-     * 특정 키에서 상위 5개 상품 조회
-     */
-    private fun getTopProductsFromKey(key: String): List<ProductPeriodSaleDto> =
-        redisTemplate
-            .opsForZSet()
-            .reverseRangeWithScores(key, 0, 4)
-            ?.mapNotNull { tuple ->
+            return salesData?.mapNotNull { tuple ->
                 tuple.value?.toString()?.toLongOrNull()?.let { productId ->
-                    ProductPeriodSaleDto(
-                        productId = productId,
-                        totalSales = tuple.score?.toLong() ?: 0L,
-                    )
+                    val quantity = tuple.score?.toInt() ?: 0
+                    if (quantity > 0) {
+                        ProductSale.createNewSale(
+                            productId = productId,
+                            saleDate = saleDate,
+                            quantity = quantity,
+                        )
+                    } else {
+                        null
+                    }
                 }
             } ?: emptyList()
+        } catch (exception: Exception) {
+            log.error("Redis에서 특정 날짜 판매량 데이터 조회 실패: saleDate={}", saleDate, exception)
+            return emptyList()
+        }
+    }
 }

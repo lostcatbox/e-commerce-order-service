@@ -1,10 +1,15 @@
 package kr.hhplus.be.server.controller.product
 
-import kr.hhplus.be.server.controller.product.dto.*
+import kr.hhplus.be.server.controller.product.dto.PopularProductInfo
+import kr.hhplus.be.server.controller.product.dto.PopularProductsResponse
+import kr.hhplus.be.server.controller.product.dto.ProductResponse
 import kr.hhplus.be.server.core.product.service.ProductSaleServiceInterface
 import kr.hhplus.be.server.core.product.service.ProductServiceInterface
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 
 /**
@@ -44,7 +49,7 @@ class ProductController(
     @GetMapping("/popular")
     fun getPopularProducts(): ResponseEntity<PopularProductsResponse> {
         val now = LocalDate.now()
-        val popularProducts = productSaleService.getPopularProducts(now)
+        val popularProducts = productSaleService.getPopularProductsInTop5(now)
 
         val productsInfo =
             popularProducts.map { product ->

@@ -2,6 +2,7 @@ package kr.hhplus.be.server.core.product.event
 
 import kr.hhplus.be.server.core.order.event.OrderCompletedEvent
 import kr.hhplus.be.server.core.product.service.ProductSaleServiceInterface
+import kr.hhplus.be.server.support.utils.CommonFormatter
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -20,7 +21,7 @@ class ProductSaleStatisticsEventListener(
     private val log = LoggerFactory.getLogger(ProductSaleStatisticsEventListener::class.java)
 
     /**
-     * 주문 완료 시 판매량 통계 업데이트 처리 (11번 기능)
+     * 주문 완료 시 판매량 통계 업데이트 처리
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -33,6 +34,7 @@ class ProductSaleStatisticsEventListener(
                 productSaleService.recordProductSale(
                     productId = orderItem.productId,
                     quantity = orderItem.quantity,
+                    saleDate = CommonFormatter.toLocalDate(event.orderCreatedDateTime),
                 )
                 log.debug("상품 판매량 기록 완료 - 상품 ID: {}, 수량: {}", orderItem.productId, orderItem.quantity)
             }
