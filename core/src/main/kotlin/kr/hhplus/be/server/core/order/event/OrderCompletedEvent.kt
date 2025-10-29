@@ -16,6 +16,7 @@ data class OrderCompletedEvent(
     val totalAmount: Long,
     val usedCouponId: Long?,
     val orderItems: List<OrderItemEventData>,
+    val orderCreatedDateTime: Long,
 ) : DomainEvent() {
     companion object {
         fun from(order: Order): OrderCompletedEvent =
@@ -32,6 +33,7 @@ data class OrderCompletedEvent(
                             unitPrice = orderItem.unitPrice,
                         )
                     },
+                orderCreatedDateTime = order.getCreatedAt(),
             )
     }
 }

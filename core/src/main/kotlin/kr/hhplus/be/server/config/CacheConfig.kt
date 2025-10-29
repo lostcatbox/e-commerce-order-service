@@ -1,8 +1,5 @@
 package kr.hhplus.be.server.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.type.TypeFactory
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
@@ -51,7 +48,7 @@ class CacheConfig {
         // 캐시별 개별 TTL 설정
         val cacheConfigurations =
             mapOf(
-                "popular_products" to defaultCacheConfig.entryTtl(Duration.ofMinutes(10)), // 인기 상품: 10분
+                "popular_products" to defaultCacheConfig.entryTtl(Duration.ofMinutes(1)), // 인기 상품: 1분
             )
 
         return RedisCacheManager
