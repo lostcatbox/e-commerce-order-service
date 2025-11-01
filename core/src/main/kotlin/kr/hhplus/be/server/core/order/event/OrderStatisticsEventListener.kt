@@ -10,7 +10,7 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 /**
- * 외부 통계 시스템 전송 이벤트 리스너 (10번 기능)
+ * 외부 통계 시스템 전송 이벤트 리스너
  *
  * OrderCompletedEvent를 처리하여 외부 통계 시스템에 주문 정보를 전송합니다.
  */
@@ -22,7 +22,7 @@ class OrderStatisticsEventListener(
     private val log = LoggerFactory.getLogger(OrderStatisticsEventListener::class.java)
 
     /**
-     * 주문 완료 시 외부 통계 시스템 전송 처리 (10번 기능)
+     * 주문 완료 시 외부 통계 시스템 전송 처리
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

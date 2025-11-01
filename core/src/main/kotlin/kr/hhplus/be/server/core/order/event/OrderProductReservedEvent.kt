@@ -9,5 +9,5 @@ import kr.hhplus.be.server.event.DomainEvent
 data class OrderProductReservedEvent(
     val orderId: Long,
     val userId: Long,
-    val orderItems: List<OrderItemEventData>,
+    val orderItems: List<OrderCompletedEvent.OrderItemEventData>,
 ) : DomainEvent()

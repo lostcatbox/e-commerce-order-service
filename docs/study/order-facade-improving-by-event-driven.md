@@ -208,7 +208,7 @@ data class OrderStatisticsRequestedEvent(
     val orderId: Long,
     val userId: Long,
     val totalAmount: Long,
-    val orderItems: List<OrderItemEventData>
+    val orderItems: List<OrderCompletedEvent.OrderItemEventData>
 )
 ```
 
@@ -216,7 +216,6 @@ data class OrderStatisticsRequestedEvent(
 ```kotlin
 // MSA 환경에서는 사용자가 이미 검증된 상태로 요청이 옵니다.
 // 따라서 별도의 사용자 검증 이벤트는 제거하였습니다.
-// API Gateway나 Auth Service에서 인증/인가를 처리합니다.
 ```
 
 #### Product Domain Events
@@ -350,7 +349,7 @@ OrderCompletedEvent
 ```
 
 
-## 4. 보상 트랜잭션(Compensation) 구현 - 개선된 버전
+## 4. 보상 트랜잭션(Compensation) 구현
 
 ### 4.1 결제 실패 시 보상 로직 개선
 
@@ -367,22 +366,29 @@ OrderCompletedEvent
 ### 4.2 개선된 보상 트랜잭션 플로우
 
 ```kotlin
-// 1. PaymentService에서 실패 시 이벤트 발행
-catch (e: Exception) {
-    val payment = Payment.createPayment(originalAmount, 0L)
-    payment.fail()
-    val savedPayment = paymentRepository.save(payment)
 
-    // 🆕 재고 복구용 데이터를 포함한 실패 이벤트 발행
-    paymentEventPublisher.publishPaymentFailed(
-        orderId = command.order.orderId,
-        paymentId = savedPayment.paymentId,
-        failureReason = e.message ?: "Payment failed",
-        orderItems = command.order.orderItems.map {
-            OrderItemCommand(it.productId, it.quantity)
-        }
-    )
-    throw e
+override fun processPayment(command: ProcessPaymentCommand): Payment {
+    try {
+        // 결제 처리 로직
+    } catch (e: Exception) {
+// 결제 실패 처리
+        val payment = Payment.createPayment(originalAmount, 0L)
+        payment.fail()
+        val savedPayment = paymentRepository.save(payment)
+
+        // 결제 실패 이벤트 발행 (재고 복구는 이벤트 리스너에서 비동기 처리)
+        paymentEventPublisher.publishPaymentFailed(
+            orderId = order.orderId,
+            paymentId = savedPayment.paymentId,
+            failureReason = e.message ?: "Payment failed",
+            orderItems =
+                order.orderItems.map {
+                    OrderItemCommand(it.productId, it.quantity)
+                },
+        )
+
+        throw e
+    }
 }
 
 // 2. PaymentEventListener에서 비동기 재고 복구
@@ -431,12 +437,12 @@ fun handleImmediateAction(event: DomainEvent) {
 ```
 
 #### TransactionPhase 옵션 선택 기준
-| Phase | 실행 시점 | 특징 | 사용 사례 |
-|-------|-----------|------|-----------|
-| `BEFORE_COMMIT` | 트랜잭션 커밋 직전 | - 메인 트랜잭션과 같은 트랜잭션<br>- 이벤트 처리 실패 시 전체 롤백 | - 필수적인 데이터 일관성 유지<br>- 동기적 처리가 필요한 경우 |
-| `AFTER_COMMIT` | 트랜잭션 커밋 후 | - 새로운 트랜잭션<br>- 메인 로직과 분리<br>- 실패해도 메인 트랜잭션 영향 없음 | - 외부 시스템 연동<br>- 통계 데이터 처리<br>- 알림 발송 |
-| `AFTER_ROLLBACK` | 트랜잭션 롤백 후 | - 메인 트랜잭션 실패 시에만 실행 | - 실패 알림<br>- 로깅<br>- 모니터링 |
-| `AFTER_COMPLETION` | 트랜잭션 완료 후 | - 성공/실패 관계없이 실행 | - 리소스 정리<br>- 감사 로그 |
+| Phase              | 실행 시점      | 특징                                                | 사용 사례                                 |
+|:-------------------|:-----------|:--------------------------------------------------|:--------------------------------------|
+| `BEFORE_COMMIT`    | 트랜잭션 커밋 직전 | - 메인 트랜잭션과 같은 트랜잭션<br>- 이벤트 처리 실패 시 전체 롤백         | - 필수적인 데이터 일관성 유지<br>- 동기적 처리가 필요한 경우 |
+| `AFTER_COMMIT`     | 트랜잭션 커밋 후  | - 새로운 트랜잭션<br>- 메인 로직과 분리<br>- 실패해도 메인 트랜잭션 영향 없음 | - 외부 시스템 연동<br>- 통계 데이터 처리<br>- 알림 발송 |
+| `AFTER_ROLLBACK`   | 트랜잭션 롤백 후  | - 메인 트랜잭션 실패 시에만 실행                               | - 실패 알림<br>- 로깅<br>- 모니터링             |
+| `AFTER_COMPLETION` | 트랜잭션 완료 후  | - 성공/실패 관계없이 실행                                   | - 리소스 정리<br>- 감사 로그                   |
 
 ### 5.3 Spring Transaction 전파 옵션
 - 물리적 트랜잭션과 논리적 트랜잭션을 다룰 수 있는 다양한 전파 옵션 제공

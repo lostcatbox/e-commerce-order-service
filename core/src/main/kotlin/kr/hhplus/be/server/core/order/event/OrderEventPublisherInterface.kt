@@ -10,7 +10,7 @@ interface OrderEventPublisherInterface {
     fun publishOrderCreated(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>,
+        orderItems: List<OrderCompletedEvent.OrderItemEventData>,
         usedCouponId: Long?,
     )
 
@@ -25,7 +25,7 @@ interface OrderEventPublisherInterface {
     fun publishOrderProductReaserved(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>,
+        orderItems: List<OrderCompletedEvent.OrderItemEventData>,
     )
 
     /**

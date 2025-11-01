@@ -13,7 +13,7 @@ class OrderEventPublisher(
     override fun publishOrderCreated(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>,
+        orderItems: List<OrderCompletedEvent.OrderItemEventData>,
         usedCouponId: Long?,
     ) {
         applicationEventPublisher.publishEvent(
@@ -33,7 +33,7 @@ class OrderEventPublisher(
     override fun publishOrderProductReaserved(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>,
+        orderItems: List<OrderCompletedEvent.OrderItemEventData>,
     ) {
         applicationEventPublisher.publishEvent(
             OrderProductReservedEvent(
