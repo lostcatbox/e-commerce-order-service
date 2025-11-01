@@ -4,7 +4,7 @@ import kr.hhplus.be.server.core.order.domain.Order
 import kr.hhplus.be.server.core.order.event.OrderCompletedEvent
 import kr.hhplus.be.server.core.order.event.OrderEventPublisherInterface
 import kr.hhplus.be.server.core.order.repository.OrderRepository
-import kr.hhplus.be.server.core.order.service.dto.*
+import kr.hhplus.be.server.core.order.service.dto.CreateOrderCommand
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -52,7 +52,7 @@ class OrderService(
         // OrderCreatedEvent 발행하여 Event-Driven 처리 시작
         val orderItemEventData =
             savedOrder.orderItems.map { orderItem ->
-                kr.hhplus.be.server.core.order.event.OrderItemEventData(
+                OrderCompletedEvent.OrderItemEventData(
                     productId = orderItem.productId,
                     quantity = orderItem.quantity,
                     unitPrice = orderItem.unitPrice,
@@ -81,7 +81,7 @@ class OrderService(
         // OrderProductReadyEvent 발행
         val orderItemEventData =
             savedOrder.orderItems.map { orderItem ->
-                kr.hhplus.be.server.core.order.event.OrderItemEventData(
+                OrderCompletedEvent.OrderItemEventData(
                     productId = orderItem.productId,
                     quantity = orderItem.quantity,
                     unitPrice = orderItem.unitPrice,

@@ -10,7 +10,7 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 /**
- * 판매량 통계 업데이트 이벤트 리스너 (11번 기능)
+ * 판매량 통계 업데이트 이벤트 리스너
  *
  * OrderCompletedEvent를 처리하여 상품별 판매량 통계를 업데이트합니다.
  */

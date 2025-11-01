@@ -36,13 +36,13 @@ data class OrderCompletedEvent(
                 orderCreatedDateTime = order.getCreatedAt(),
             )
     }
-}
 
-/**
- * 주문 상품 이벤트 데이터
- */
-data class OrderItemEventData(
-    val productId: Long,
-    val quantity: Int,
-    val unitPrice: Long,
-)
+    /**
+     * 주문 상품 이벤트 데이터
+     */
+    data class OrderItemEventData(
+        val productId: Long,
+        val quantity: Int,
+        val unitPrice: Long,
+    )
+}
