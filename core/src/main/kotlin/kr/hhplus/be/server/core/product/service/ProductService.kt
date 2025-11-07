@@ -3,7 +3,6 @@ package kr.hhplus.be.server.core.product.service
 import kr.hhplus.be.server.core.order.service.dto.OrderItemCommand
 import kr.hhplus.be.server.core.product.domain.Product
 import kr.hhplus.be.server.core.product.event.ProductEventPublisherInterface
-import kr.hhplus.be.server.core.product.event.ProductInsufficientData
 import kr.hhplus.be.server.core.product.event.ProductReservationData
 import kr.hhplus.be.server.core.product.repository.ProductRepository
 import kr.hhplus.be.server.core.product.service.dto.SaleProductsCommand
@@ -110,26 +109,12 @@ class ProductService(
                 products = reservations,
             )
         } catch (e: Exception) {
-            // 재고 부족 이벤트 발행
-            val insufficientProducts = extractInsufficientProducts(e)
-
             productEventPublisher.publishProductStockInsufficient(
                 orderId = orderId,
-                insufficientProducts = insufficientProducts,
                 reason = e.message ?: "Stock insufficient",
             )
             throw e
         }
-    }
-
-    /**
-     * 예외에서 부족한 상품 정보 추출 (임시 구현)
-     */
-    private fun extractInsufficientProducts(
-        @Suppress("UNUSED_PARAMETER") e: Exception,
-    ): List<ProductInsufficientData> {
-        // 실제로는 예외에서 부족한 상품 정보를 추출해야 함
-        return emptyList<ProductInsufficientData>()
     }
 
     /**

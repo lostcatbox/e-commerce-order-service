@@ -2,7 +2,6 @@ package kr.hhplus.be.server.fake.event
 
 import kr.hhplus.be.server.core.order.event.OrderCompletedEvent
 import kr.hhplus.be.server.core.order.event.OrderEventPublisherInterface
-import kr.hhplus.be.server.core.order.event.OrderItemEventData
 
 /**
  * 테스트용 가짜 주문 이벤트 발행자
@@ -12,7 +11,7 @@ class FakeOrderEventPublisher : OrderEventPublisherInterface {
     override fun publishOrderCreated(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>,
+        orderItems: List<OrderCompletedEvent.OrderItemEventData>,
         usedCouponId: Long?,
     ) {
         // 테스트용 - 실제 이벤트 발행 없음
@@ -25,7 +24,7 @@ class FakeOrderEventPublisher : OrderEventPublisherInterface {
     override fun publishOrderProductReaserved(
         orderId: Long,
         userId: Long,
-        orderItems: List<OrderItemEventData>,
+        orderItems: List<OrderCompletedEvent.OrderItemEventData>,
     ) {
         // 테스트용 - 실제 이벤트 발행 없음
     }

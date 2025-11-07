@@ -8,36 +8,33 @@ import org.springframework.stereotype.Component
  */
 @Component
 class PaymentEventPublisher(
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) : PaymentEventPublisherInterface {
-
     override fun publishPaymentSucceeded(
         orderId: Long,
         paymentId: Long,
-        finalAmount: Long
+        finalAmount: Long,
     ) {
         applicationEventPublisher.publishEvent(
             PaymentSucceededEvent(
                 orderId = orderId,
                 paymentId = paymentId,
-                finalAmount = finalAmount
-            )
+                finalAmount = finalAmount,
+            ),
         )
     }
 
     override fun publishPaymentFailed(
         orderId: Long,
-        paymentId: Long,
         failureReason: String,
-        orderItems: List<kr.hhplus.be.server.core.order.service.dto.OrderItemCommand>
+        orderItems: List<kr.hhplus.be.server.core.order.service.dto.OrderItemCommand>,
     ) {
         applicationEventPublisher.publishEvent(
             PaymentFailedEvent(
                 orderId = orderId,
-                paymentId = paymentId,
                 failureReason = failureReason,
-                orderItems = orderItems
-            )
+                orderItems = orderItems,
+            ),
         )
     }
 }

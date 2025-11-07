@@ -194,7 +194,6 @@ class PaymentServiceTest {
         failedPayment.fail() // 실패 상태로 변경
 
         whenever(pointService.usePoint(userId, orderAmount)).thenThrow(RuntimeException("포인트 부족"))
-        whenever(paymentRepository.save(any<Payment>())).thenReturn(failedPayment)
 
         // when & then
         val exception =
@@ -204,7 +203,6 @@ class PaymentServiceTest {
         assertEquals("포인트 부족", exception.message)
 
         verify(pointService).usePoint(userId, orderAmount)
-        verify(paymentRepository, atLeastOnce()).save(any<Payment>()) // 실패 처리로 인해 최소 1번 호출
     }
 
     @Test

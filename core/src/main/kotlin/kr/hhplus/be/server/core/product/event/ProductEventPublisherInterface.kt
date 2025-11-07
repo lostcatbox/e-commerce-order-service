@@ -9,7 +9,7 @@ interface ProductEventPublisherInterface {
      */
     fun publishProductStockReserved(
         orderId: Long,
-        products: List<ProductReservationData>
+        products: List<ProductReservationData>,
     )
 
     /**
@@ -17,7 +17,6 @@ interface ProductEventPublisherInterface {
      */
     fun publishProductStockInsufficient(
         orderId: Long,
-        insufficientProducts: List<ProductInsufficientData>,
-        reason: String
+        reason: String,
     )
 }

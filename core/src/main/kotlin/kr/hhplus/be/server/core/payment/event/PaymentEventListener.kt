@@ -45,7 +45,7 @@ class PaymentEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handlePaymentFailedStockRestore(event: PaymentFailedEvent) {
         try {
-            log.info("결제 실패로 인한 재고 복구 시작 - 주문 ID: {}, 결제 ID: {}", event.orderId, event.paymentId)
+            log.info("결제 실패로 인한 재고 복구 시작 - 주문 ID: {}, 결제 ID: {}", event.orderId)
 
             // 별도 트랜잭션에서 재고 복구 처리
             productService.restoreStock(event.orderItems)
@@ -53,13 +53,10 @@ class PaymentEventListener(
             log.info("결제 실패로 인한 재고 복구 완료 - 주문 ID: {}", event.orderId)
         } catch (e: Exception) {
             log.error(
-                "재고 복구 실패 - 주문 ID: {}, 결제 ID: {}, 오류: {}",
+                "재고 복구 실패 - 주문 ID: {}, 오류: {}",
                 event.orderId,
-                event.paymentId,
                 e.message,
             )
-            // 재고 복구 실패는 데이터 정합성 이슈이므로 별도 알림/모니터링 필요
-            // TODO: 재고 복구 실패 시 알림 시스템 연동 또는 재시도 로직 구현
         }
     }
 }

@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.core.order.event
 
 import kr.hhplus.be.server.core.order.service.OrderServiceInterface
-import kr.hhplus.be.server.core.order.service.OrderStatisticsServiceInterface
 import kr.hhplus.be.server.core.payment.event.PaymentFailedEvent
 import kr.hhplus.be.server.core.payment.event.PaymentSucceededEvent
 import kr.hhplus.be.server.core.product.event.ProductStockInsufficientEvent

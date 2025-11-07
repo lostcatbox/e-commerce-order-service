@@ -14,7 +14,7 @@
 - 📝 [ERD 설계 및 작성](docs/ERD.md)
 
 ## 기술 보고서
-🔥🔥🔥 [예상되는 병목 현상 및 해결 방안](docs/study/bottleneck-effect-in-6week-commit.md) 🔥🔥🔥 
+🔥🔥🔥 [예상되는 병목 현상 및 해결 방안](docs/study/bottleneck-effect-in-6week-commit.md) 🔥🔥🔥
 
 - 📋️ **시스템 아키텍처 보고서**
   - [클린 아키텍처와 헥사고날 아키텍처](docs/study/clean-architecture-and-hexagonal-architecture.md)
@@ -42,6 +42,7 @@
 - 📚 [Cache (캐시)의 종류와 특징](docs/study/caching.md)
 - 📚 [Kafka 기본 개념 보고서](docs/study/kafka-basic-concepts.md)
 - 📚 [왜 ApplicationEvent를 사용하는가?](docs/study/application-event.md)
+- 📚 [ApplicationEventListener에 대해서](docs/study/application-event-listener.md)
 
 
 ------------------------------------------------------------

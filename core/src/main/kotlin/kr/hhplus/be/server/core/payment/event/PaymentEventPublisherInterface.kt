@@ -12,7 +12,7 @@ interface PaymentEventPublisherInterface {
     fun publishPaymentSucceeded(
         orderId: Long,
         paymentId: Long,
-        finalAmount: Long
+        finalAmount: Long,
     )
 
     /**
@@ -20,8 +20,7 @@ interface PaymentEventPublisherInterface {
      */
     fun publishPaymentFailed(
         orderId: Long,
-        paymentId: Long,
         failureReason: String,
-        orderItems: List<OrderItemCommand>
+        orderItems: List<OrderItemCommand>,
     )
 }

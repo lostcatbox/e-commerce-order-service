@@ -72,15 +72,9 @@ class PaymentService(
 
             return savedPayment
         } catch (e: Exception) {
-            // 결제 실패 처리
-            val payment = Payment.createPayment(originalAmount, 0L)
-            payment.fail()
-            val savedPayment = paymentRepository.save(payment)
-
             // 결제 실패 이벤트 발행 (재고 복구는 이벤트 리스너에서 비동기 처리)
             paymentEventPublisher.publishPaymentFailed(
                 orderId = order.orderId,
-                paymentId = savedPayment.paymentId,
                 failureReason = e.message ?: "Payment failed",
                 orderItems =
                     order.orderItems.map {

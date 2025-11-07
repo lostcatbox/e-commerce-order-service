@@ -8,32 +8,29 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ProductEventPublisher(
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) : ProductEventPublisherInterface {
-
     override fun publishProductStockReserved(
         orderId: Long,
-        products: List<ProductReservationData>
+        products: List<ProductReservationData>,
     ) {
         applicationEventPublisher.publishEvent(
             ProductStockReservedEvent(
                 orderId = orderId,
-                products = products
-            )
+                products = products,
+            ),
         )
     }
 
     override fun publishProductStockInsufficient(
         orderId: Long,
-        insufficientProducts: List<ProductInsufficientData>,
-        reason: String
+        reason: String,
     ) {
         applicationEventPublisher.publishEvent(
             ProductStockInsufficientEvent(
                 orderId = orderId,
-                insufficientProducts = insufficientProducts,
-                reason = reason
-            )
+                reason = reason,
+            ),
         )
     }
 }
