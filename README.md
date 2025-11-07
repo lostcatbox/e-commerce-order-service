@@ -19,7 +19,7 @@
 - 📋️ **시스템 아키텍처 보고서**
   - [클린 아키텍처와 헥사고날 아키텍처](docs/study/clean-architecture-and-hexagonal-architecture.md)
 - 📋️ **DB 성능 최적화 보고서**
-  - [인기 판매 상품 성능 개선 (Redis를 DB와 캐시로 활용)](docs/study/product-seller-rank-improve.md)
+  - [인기 판매 상품 성능 개선 (Redis를 DB와 캐시로 활용)](docs/study/improve-product-sale-rank.md)
 - 📋 **동시성 이슈 분석 및 해결 보고서**
   - [동시성 이슈 발생 구간 정리 및 해결](docs/study/concurrency-issues-and-solvent.md)
   - [선착순 쿠폰 발급 절차 개선 (분산락 적용)](docs/study/distributed-lock.md)
