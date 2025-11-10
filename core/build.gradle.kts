@@ -21,17 +21,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework:spring-aspects")
-    // Spring Data Redis (캐싱)
+    // Spring Data Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
-
-    // DB
-    runtimeOnly("com.mysql:mysql-connector-j")
-
     // Redisson
     implementation("org.redisson:redisson-spring-boot-starter:3.24.3")
 
-    // Spring Data Redis (캐싱용 - 상품 관련)
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    // DB
+    runtimeOnly("com.mysql:mysql-connector-j")
 
     // Jackson Kotlin Module
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

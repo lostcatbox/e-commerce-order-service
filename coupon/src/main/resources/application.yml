@@ -8,15 +8,15 @@ spring:
   profiles:
     active: consumer
 
-  # 데이터베이스 설정 (쿠폰 발급 처리를 위해 필요)
+  # 데이터베이스 설정
   datasource:
     name: ECommerceDataSource
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       auto-commit: false
-      maximum-pool-size: 3  # Consumer는 최소 연결만 사용
+      maximum-pool-size: 3
       minimum-idle: 1
-      connection-timeout: 15000  # timeout 증가
+      connection-timeout: 15000
       max-lifetime: 60000
       idle-timeout: 30000
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,7 +24,7 @@ spring:
     username: application
     password: application
 
-  # JPA 설정 (최소한만 유지)
+  # JPA 설정
   jpa:
     open-in-view: false
     generate-ddl: false
@@ -39,7 +39,7 @@ spring:
       hibernate.order_updates: true
       hibernate.jdbc.batch_versioned_data: true
       hibernate.connection.provider_disables_autocommit: true
-      hibernate.transaction.jta.platform: none  # JTA 사용하지 않음을 명시
+      hibernate.transaction.jta.platform: none
 
   # Kafka Consumer 설정
   kafka:
@@ -50,19 +50,6 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       enable-auto-commit: false
       client-id: coupon-consumer-${random.uuid}
-
-# Redisson 분산락 설정 (쿠폰 발급 동시성 제어용)
-spring.redis.redisson.config:
-  singleServerConfig:
-    address: "redis://localhost:6379"
-    connectionMinimumIdleSize: 1  # Consumer는 최소 연결만 사용
-    connectionPoolSize: 3
-    database: 0
-    idleConnectionTimeout: 15000  # timeout 증가
-    connectTimeout: 3000
-    timeout: 3000
-    retryAttempts: 3
-    retryInterval: 2000
 
 # 애플리케이션 설정
 app:
