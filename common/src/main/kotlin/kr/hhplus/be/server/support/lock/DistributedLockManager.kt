@@ -20,11 +20,6 @@ class DistributedLockManager(
 ) : DistributedLockManagerInterface {
     private val logger = LoggerFactory.getLogger(DistributedLockManager::class.java)
 
-    companion object {
-        private const val DEFAULT_WAIT_TIME = 5L
-        private const val DEFAULT_LEASE_TIME = 10L
-    }
-
     /**
      * 분산락을 획득하고 트랜잭션 내에서 비즈니스 로직을 실행
      *

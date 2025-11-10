@@ -3,6 +3,7 @@ package kr.hhplus.be.server.core.coupon.service
 import kr.hhplus.be.server.core.coupon.domain.UserCoupon
 import kr.hhplus.be.server.core.coupon.repository.UserCouponRepository
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -31,7 +32,7 @@ class UserCouponService(
     /**
      * 사용자 쿠폰 발급
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     fun createUserCoupon(
         userId: Long,
         couponId: Long,

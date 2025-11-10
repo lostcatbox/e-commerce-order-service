@@ -89,26 +89,23 @@ class CouponService(
      */
     override fun getQueueSize(couponId: Long): Long = couponIssueQueueService.getQueueSize(couponId)
 
-    // ===== 쿠폰 발급 처리 기능 (기존 CouponIssueFacade) =====
-
     /**
-     * 쿠폰 발급 처리 (스케줄러에서 사용)
+     * 쿠폰 발급 처리
      *
      * 완전한 쿠폰 발급 프로세스:
      * 1. 쿠폰 재고 차감 (분산락 + 비관적 락으로 동시성 제어)
      * 2. 사용자 쿠폰 생성 (중복 발급 검증 포함)
-     *
-     * 단일 트랜잭션으로 처리하여 데이터 정합성 보장
      */
-    @Transactional
     override fun issueCoupon(request: CouponIssueRequest): UserCoupon {
         try {
             validateCouponId(request.couponId)
 
-            // 1. 쿠폰 재고 차감 with 분산락
+            // 분산락 키 생성
             val lockKey = "lock:coupon-issue:${request.couponId}"
-            distributedLockManager.executeWithLock(lockKey) {
-                // 쿠폰 조회 (비관적 락)
+
+            // 분산락 내에서 쿠폰 발급 처리
+            return distributedLockManager.executeWithLock(lockKey) {
+                // 1. 쿠폰 재고 차감
                 val coupon =
                     couponRepository.findByCouponIdWithPessimisticLock(request.couponId)
                         ?: throw IllegalArgumentException("존재하지 않는 쿠폰입니다. 쿠폰 ID: ${request.couponId}")
@@ -118,12 +115,9 @@ class CouponService(
 
                 // 재고 차감된 쿠폰 저장
                 couponRepository.save(coupon)
+                // 2. 사용자 쿠폰 생성 (내부에서 중복 발급 검증 수행)
+                userCouponService.createUserCoupon(request.userId, request.couponId)
             }
-
-            // 2. 사용자 쿠폰 생성 (내부에서 중복 발급 검증 수행)
-            val userCoupon = userCouponService.createUserCoupon(request.userId, request.couponId)
-
-            return userCoupon
         } catch (e: Exception) {
             throw e
         }
